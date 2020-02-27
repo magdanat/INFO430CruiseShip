@@ -1,6 +1,16 @@
 -- Rayna Tilley
 -- Cruiseship Code
 
+/*
+SUMMARY:
+Business Rules: IP
+Stored Procedures: DONE
+Computed Columns: Not Started
+Views: Not Started
+Synthetic Transactions: Not Started
+
+*/
+
 USE CRUISE
 
 -- Business Rules
