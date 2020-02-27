@@ -203,17 +203,36 @@ BEGIN
 		JOIN tblSTAFF_TRIP_POSITION STP ON T.TripID = STP.TripID
 		JOIN tblINCIDENT I ON STP.StaffTripPosID = I.StaffTripPosID
 	WHERE T.TripID = @PK_ID)
-RETURN @RET
+RETURN @Ret
 END
 GO
 ALTER TABLE tblTRIP ADD TotalIncidents AS (dbo.cruise_NumIncidentsPerTrip_fn(@TripID))
 
--- 2. How many people are on a trip (Check CUST_BOOK status)
+-- 2. How many customers are on a trip (Check CUST_BOOK status)
 --	  Confused about what is meant by this...
+CREATE FUNCTION cruise_TotalActivePassengers_fn(@PK_ID INT)
+RETURNS INT
+AS
+BEGIN
+	DECLARE @Ret INT =
+	(SELECT COUNT(C.CustID)
+	FROM tblCUSTOMER C
+		JOIN tblCUST_BOOK CB ON C.CustID = CB.CustID
+		JOIN tblBOOKING B ON CB.BookingID = B.BookingID
+		JOIN tblBOOKING_STATUS BS ON BS.BookStatusID = B.BookStatusID
+		JOIN tblTRIP_CABIN TC ON B.TripCabinID = TC.TripCabinID
+		JOIN tblTRIP T ON TC.TripID = T.TripID
+	WHERE T.TripID = @PK_ID)
+RETURN @Ret
+END
+GO
+ALTER TABLE tblTRIP ADD TotalPassengers AS (dbo.cruise_TotalActivePassengers_fn(@TripID INT))
 
 -- Views
 -- 1. View the top 10 curiseships that have the most trips within 5 years
-
+SELECT TOP 5 C.*
+FROM tblCRUISESHIP C
+	JOIN tbl
 
 -- 2. View top 100 customers who have spent the most on
 --`   all excursions and activities in last 5 years
