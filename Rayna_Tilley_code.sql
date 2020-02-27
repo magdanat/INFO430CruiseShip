@@ -6,7 +6,7 @@ SUMMARY:
 Business Rules: IP
 Stored Procedures: DONE
 Computed Columns: DONE-ish
-Views: Not Started
+Views: IP
 Synthetic Transactions: Not Started
 */
 
@@ -241,7 +241,7 @@ ORDER BY COUNT(T.TripID) DESC
 -- 2. View top 15 customers who have spent the most on
 --`   all excursions and activities in last 5 years...
 --	  Who have also been to a port in Mexico during the 2010s.
-SELECT TOP 15 C.CustID, C.CustFname, C.CustLname, C.CustDOB
+SELECT TOP 15 C.CustID, C.CustFname, C.CustLname, C.CustDOB, SUM(CBET.Cost) AS CummulativeSum
 FROM tblCUSTOMER C
 	JOIN tblCUST_BOOK CB ON C.CustID = CB.CustID
 	JOIN tblBOOKING B ON CB.BookingID = B.BookingID
@@ -269,7 +269,6 @@ WHERE EC.StartTime > (SELECT GETDATE() - 365.25 * 5)
 GROUP BY C.CustID, C.CustFname, C.CustLname, C.CustDOB
 ORDER BY SUM(CBET.Cost) DESC
 
-
 -- Synthetic Transactions
 -- 1. tblCUST_BOOK_ACT_TRIP
-
+-- Is the the while loop function???
