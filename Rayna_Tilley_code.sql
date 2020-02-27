@@ -57,21 +57,21 @@ CREATE PROC cruise_NewRowCustBookExcTrip
 @CustFname varchar(50),
 @CustLname varchar(50),
 @CustDOB date,
-@BookingNumber car(7),
+@BookingNumber char(7),
 @ExcursionStartTime datetime,
 @ExcursionEndTime datetime,
 @ExcursionName varchar(50),
 @TripName varchar(50),
 @TripStartDay date,
-@TripEndDay date,
+@TripEndDay date
 AS
 DECLARE @ExcursionTripID INT, @CustBookingID INT
 EXEC cruise_GetCustBookingID
 @Fname = @CustFname,
 @Lname = @CustLname,
 @DOB = @CustDOB,
-@BookingNum = @BookingNum,
-@CB_ID = @CustBookibgID OUTPUT
+@BookingNum = @BookingNumber,
+@CB_ID = @CustBookingID OUTPUT
 IF @CustBookingID IS NULL
 BEGIN
 	RAISERROR('@CustBookingID cannot be null.',11,1)
@@ -99,7 +99,6 @@ IF @@ERROR <> 0
 	END
 ELSE
 	COMMIT TRAN T1
-
 GO
 -- 2. Get CustBookingID
 CREATE PROC cruise_GetCustBookingID
