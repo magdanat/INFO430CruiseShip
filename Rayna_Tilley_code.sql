@@ -5,7 +5,7 @@
 SUMMARY:
 Business Rules: IP
 Stored Procedures: DONE
-Computed Columns: Not Started
+Computed Columns: DONE-ish
 Views: Not Started
 Synthetic Transactions: Not Started
 */
@@ -230,12 +230,45 @@ ALTER TABLE tblTRIP ADD TotalPassengers AS (dbo.cruise_TotalActivePassengers_fn(
 
 -- Views
 -- 1. View the top 10 curiseships that have the most trips within 5 years
-SELECT TOP 5 C.*
+-- Probably too simple...
+SELECT TOP 10 with ties C.CruiseshipID, C.CruiseshipName, COUNT(T.TripID) AS TotalTrips
 FROM tblCRUISESHIP C
-	JOIN tbl
+	JOIN tblTRIP T ON C.CruiseshipID = T.CruiseshipID
+WHERE T.StartDate > (SELECT GETDATE() - 365.25 * 5)
+GROUP BY C.CruiseshipID, C.CruiseshipName
+ORDER BY COUNT(T.TripID) DESC
 
--- 2. View top 100 customers who have spent the most on
---`   all excursions and activities in last 5 years
+-- 2. View top 15 customers who have spent the most on
+--`   all excursions and activities in last 5 years...
+--	  Who have also been to a port in Mexico during the 2010s.
+SELECT TOP 15 C.CustID, C.CustFname, C.CustLname, C.CustDOB
+FROM tblCUSTOMER C
+	JOIN tblCUST_BOOK CB ON C.CustID = CB.CustID
+	JOIN tblBOOKING B ON CB.BookingID = B.BookingID
+	JOIN tblTRIP_CABIN TC ON B.TripCabinID = TC.TripCabinID
+	JOIN tblTRIP T ON TC.TripID = T.TripID
+	JOIN tblEXCURSION_TRIP EC ON TC.TripID = EC.TripID
+	JOIN tblEXCURSION E ON EC.ExcursionID = E.ExcursionID
+	JOIN tblCUST_BOOK_EXC_TRIP CBET ON EC.ExcursionTripID = CBET.ExcursionTripID
+JOIN
+	(SELECT C.CustID, C.CustFname, C.CustLname, C.CustDOB
+	FROM tblCUSTOMER C
+		JOIN tblCUST_BOOK CB ON C.CustID = CB.CustID
+		JOIN tblBOOKING B ON CB.BookingID = B.BookingID
+		JOIN tblTRIP_CABIN TC ON B.TripCabinID = TC.TripCabinID
+		JOIN tblTRIP T ON TC.TripID = T.TripID
+		JOIN tblEXCURSION_TRIP EC ON TC.TripID = EC.TripID
+		JOIN tblEXCURSION E ON EC.ExcursionID = E.ExcursionID
+		JOIN tblROUTE_PORT RP ON E.RoutePortID = RP.RoutePortID
+		JOIN tblPORT P ON RP.PortID = P.PortID
+		JOIN tblCITY CI ON P.CityID = CI.CityID
+		JOIN tblCOUNTRY CO ON CI.CountryID = CO.CountryID
+	WHERE CO.CountryName = 'Mexico'
+		AND T.StartDate BETWEEN '2010' AND '2019') AS SQ1 ON SQ1.CustID = C.CustID
+WHERE EC.StartTime > (SELECT GETDATE() - 365.25 * 5)
+GROUP BY C.CustID, C.CustFname, C.CustLname, C.CustDOB
+ORDER BY SUM(CBET.Cost) DESC
+
 
 -- Synthetic Transactions
 -- 1. tblCUST_BOOK_ACT_TRIP
