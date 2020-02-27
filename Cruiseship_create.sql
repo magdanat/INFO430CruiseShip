@@ -1,5 +1,7 @@
 -- USE master
--- USE CRUISE
+
+-- CREATE DATABASE CRUISE
+USE CRUISE
 
 -- tables
 -- Table: tblACTIVITY
@@ -118,7 +120,7 @@ CREATE TABLE tblCUSTOMER (
     GenderID int  NOT NULL,
     CustFname varchar(50)  NOT NULL,
     CustLname varchar(50)  NOT NULL,
-    DateOfBirth datetime  NOT NULL
+    CustDOB date  NOT NULL
 );
 
 -- Table: tblCUST_BOOK
@@ -253,7 +255,7 @@ CREATE TABLE tblSTAFF (
     GenderID int  NOT NULL,
     StaffFname varchar(50)  NOT NULL,
     StaffLname varchar(50)  NOT NULL,
-    StaffDOB datetime  NOT NULL
+    StaffDOB date  NOT NULL
 );
 
 -- Table: tblSTAFF_TRIP_POSITION
@@ -278,8 +280,8 @@ CREATE TABLE tblTRIP (
     CruiseshipID int  NOT NULL,
     TripName varchar(50)  NOT NULL,
     TripDescr varchar(500)  NULL,
-    StartDate datetime  NOT NULL,
-    EndDate datetime  NOT NULL
+    StartDate date  NOT NULL,
+    EndDate date  NOT NULL
 );
 
 -- Table: tblTRIP_CABIN
@@ -295,15 +297,15 @@ CREATE TABLE tblVENUES (
     VenueTypeID int  NOT NULL,
     CruiseshipID int  NOT NULL,
     VenueName varchar(50)  NOT NULL,
-    VenueDescr varchar(500)  NULL
+    VenueDescr varchar(500)  NULL,
+	Capacity int NOT NULL
 );
 
 -- Table: tblVENUE_TYPE
 CREATE TABLE tblVENUE_TYPE (
     VenueTypeID int IDENTITY(1,1) PRIMARY KEY NOT NULL,
     VenueTypeName varchar(50)  NOT NULL,
-    VenueTypeDescr varchar(500)  NULL,
-    Capacity int  NOT NULL
+    VenueTypeDescr varchar(500)  NULL
 );
 
 -- foreign keys
@@ -521,5 +523,3 @@ ALTER TABLE tblTRIP_CABIN ADD CONSTRAINT tblTRIP_CABIN_tblTRIP
 ALTER TABLE tblTRIP ADD CONSTRAINT tblTRIP_tblCRUISESHIP
     FOREIGN KEY (CruiseshipID)
     REFERENCES tblCRUISESHIP (CruiseshipID);
-
-
