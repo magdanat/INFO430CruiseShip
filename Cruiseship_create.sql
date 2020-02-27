@@ -267,13 +267,6 @@ CREATE TABLE tblSTAFF_TRIP_POSITION (
     PositionID int  NOT NULL
 );
 
--- Table: tblSTAFF_TYPE
-CREATE TABLE tblSTAFF_TYPE (
-    StaffTypeID int IDENTITY(1,1) PRIMARY KEY NOT NULL,
-    StaffTypeName varchar(50)  NOT NULL,
-    StaffTypeDescr varchar(500)  NULL
-);
-
 -- Table: tblTRIP
 CREATE TABLE tblTRIP (
     TripID int IDENTITY(1,1) PRIMARY KEY NOT NULL,
