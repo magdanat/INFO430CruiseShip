@@ -8,7 +8,6 @@ Stored Procedures: DONE
 Computed Columns: Not Started
 Views: Not Started
 Synthetic Transactions: Not Started
-
 */
 
 USE CRUISE
@@ -194,10 +193,23 @@ GO
 
 -- Computed Columns
 -- 1. Number of incidents for each trip
-
+CREATE FUNCTION cruise_NumIncidentsPerTrip_fn(@PK_ID INT)
+RETURNS INT
+AS
+BEGIN 
+	DECLARE @Ret INT =
+	(SELECT COUNT(I.IncidentID)
+	FROM tblTRIP T
+		JOIN tblSTAFF_TRIP_POSITION STP ON T.TripID = STP.TripID
+		JOIN tblINCIDENT I ON STP.StaffTripPosID = I.StaffTripPosID
+	WHERE T.TripID = @PK_ID)
+RETURN @RET
+END
+GO
+ALTER TABLE tblTRIP ADD TotalIncidents AS (dbo.cruise_NumIncidentsPerTrip_fn(@TripID))
 
 -- 2. How many people are on a trip (Check CUST_BOOK status)
-
+--	  Confused about what is meant by this...
 
 -- Views
 -- 1. View the top 10 curiseships that have the most trips within 5 years
