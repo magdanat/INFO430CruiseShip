@@ -1,5 +1,28 @@
 /* Doris ---- Stored Procedures */
+
 /* SP 1
+Get CustBookingID */
+CREATE PROCEDURE getCustBookingID
+@CustFname VARCHAR(50),
+@CustLname VARCHAR(50),
+@CustDOB Datetime,
+@BookingNumber char(7),
+@CustBookingID INT OUTPUT
+AS
+    DECLARE @BookingID INT, @CustID INT
+    SET @CustID =
+        (SELECT CustID FROM tblCUSTOMER
+        WHERE CustFname = @CustFname
+            AND CustLname = @CustLname
+            AND DateOfBirth = @CustDOB)
+    SET @BookingID = (SELECT BookingID FROM tblBOOKING
+                        WHERE BookingNumber = @BookingNumber)
+    SET @CustBookingID =
+            (SELECT CustBookingID FROM tblCUST_BOOK
+                WHERE CustID = @CustID
+                AND BookingID = @BookingID)
+
+/* SP 2
 Add new row in tblCUST_BOOK_EXC_TRIP */
 CREATE PROCEDURE insertCUST_BOOK_EXC_TRIP
 @CustF VARCHAR(50),
@@ -48,24 +71,43 @@ AS
     ELSE
         COMMIT TRAN T1
 
-/* SP 2
-Get CustBookingID */
-CREATE PROCEDURE getCustBookingID
-@CustFname VARCHAR(50),
-@CustLname VARCHAR(50),
-@CustDOB Datetime,
-@BookingNumber char(7),
-@CustBookingID INT OUTPUT
+
+/* Synthetic Transactions
+    tblCUST_BOOK_EXC_TRIP
+*/
+CREATE PROCEDURE WRAPPER_INSERT_CustBOOKEXCTRIP
+@RUN INT
 AS
-    DECLARE @BookingID INT, @CustID INT
-    SET @CustID =
-        (SELECT CustID FROM tblCUSTOMER
-        WHERE CustFname = @CustFname
-            AND CustLname = @CustLname
-            AND DateOfBirth = @CustDOB)
-    SET @BookingID = (SELECT BookingID FROM tblBOOKING
-                        WHERE BookingNumber = @BookingNumber)
-    SET @CustBookingID =
-            (SELECT CustBookingID FROM tblCUST_BOOK
-                WHERE CustID = @CustID
-                AND BookingID = @BookingID)
+    DECLARE @CustBooking_Rand INT, @ExcrTrip_Rand INT, @CB_PK INT, @ET_PK INT, @CB_Count INT, @ET_Count INT
+    DECLARE @F VARCHAR(50), @L VARCHAR(50), @B Datetime
+    SET @CB_Count = (SELECT COUNT(*) FROM tblCUST_BOOK)
+
+    WHILE @RUN > 0
+    BEGIN
+        SET
+
+
+
+    EXEC insertCUST_BOOK_EXC_TRIP
+    @CustF = ,
+    @CustL = ,
+    @CustBD = ,
+    @BookingNum = ,
+    @ExcN = ,
+    @TripN = ,
+    @RegisTime = ,
+    @Cost =
+
+SET @RUN = @RUN - 1
+PRINT @RUN
+END
+
+insertCUST_BOOK_EXC_TRIP
+@CustF VARCHAR(50),
+@CustL VARCHAR(50),
+@CustBD Datetime,
+@BookingNum char(7),
+@ExcN VARCHAR(50),
+@TripN VARCHAR(50),
+@RegisTime DATETIME,
+@Cost NUMERIC(8,2)
