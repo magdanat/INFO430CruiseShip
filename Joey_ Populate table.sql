@@ -2,10 +2,10 @@ USE CRUISE
 
 SET IDENTITY_INSERT tblCABIN_TYPE ON
 INSERT INTO tblCABIN_TYPE(CabinTypeID,CabinTypeName, CabinTypeDescr,Capacity,NumWindows)
-VALUES (001,'Interior','Inside cabins are the smallest on the ship and are the least expensive cabins. Located in the interior of the ship, these cabins do not have windows, although you might be able to look at the view on the cabinís television.', 2,4),
+VALUES (001,'Interior','Inside cabins are the smallest on the ship and are the least expensive cabins. Located in the interior of the ship, these cabins do not have windows, although you might be able to look at the view on the cabin‚Äôs television.', 2,4),
 (002,'Oceanview', ' Oceanview cabins contain all of the features of inside cabins, but also include a porthole, picture window or floor-to-ceiling windows, depending on the category and deck level.',4,6),
 (003,'Balcony','Balcony cabins feature a private balcony off your cabin. These cabins are the next level up in price from the oceanview cabins and are usually a little larger. ',6,10),
-(004,'Mini-Suites','While ìsuiteî in this case doesnít mean two separate rooms, youíll most likely have a curtain or other means to separate the living area from the sleeping area. In addition to a couch and chairs, you can expect a slightly larger balcony and a tub/shower combination rather than just a shower.',8,8),
+(004,'Mini-Suites','While ‚Äúsuite‚Äù in this case doesn‚Äôt mean two separate rooms, you‚Äôll most likely have a curtain or other means to separate the living area from the sleeping area. In addition to a couch and chairs, you can expect a slightly larger balcony and a tub/shower combination rather than just a shower.',8,8),
 (005,'Suites','Suites range from basic two-room suites to large, luxurious multi-roomed spaces with your own hot tub. Suites are the most expensive accommodations on the ship, but feature many amenities for the money. In additional to the extra space, suites feature extra-large balconies complete with lounge chairs.',10,10)
 SET IDENTITY_INSERT tblCABIN_TYPE OFF
 
