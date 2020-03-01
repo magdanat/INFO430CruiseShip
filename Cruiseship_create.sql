@@ -204,7 +204,7 @@ CREATE TABLE tblINCIDENT_TYPE (
 CREATE TABLE tblPORT (
     PortID int IDENTITY(1,1) PRIMARY KEY NOT NULL,
     CityID int  NOT NULL,
-    PortName varchar(50)  NOT NULL,
+    PortName varchar(100)  NOT NULL,
     PortDescr varchar(500)  NULL
 );
 
