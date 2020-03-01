@@ -250,7 +250,6 @@ CREATE TABLE tblROUTE_PORT_TYPE (
 -- Table: tblSTAFF
 CREATE TABLE tblSTAFF (
     StaffID int IDENTITY(1,1) PRIMARY KEY NOT NULL,
-    StaffTypeID int  NOT NULL,
     CruiseLineID int  NOT NULL,
     GenderID int  NOT NULL,
     StaffFname varchar(50)  NOT NULL,
