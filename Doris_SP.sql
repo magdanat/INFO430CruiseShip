@@ -1,4 +1,5 @@
 /* Doris ---- Stored Procedures */
+USE CRUISE
 
 /* SP 1
 Get CustBookingID */
@@ -14,7 +15,7 @@ AS
         (SELECT CustID FROM tblCUSTOMER
         WHERE CustFname = @CustFname
             AND CustLname = @CustLname
-            AND DateOfBirth = @CustDOB)
+            AND CustDOB = @CustDOB)
     SET @BookingID = (SELECT BookingID FROM tblBOOKING
                         WHERE BookingNumber = @BookingNumber)
     SET @CustBookingID =
@@ -52,7 +53,7 @@ AS
         (SELECT ExcursionTripID FROM tblEXCURSION_TRIP ET
             JOIN tblEXCURSION E ON ET.ExcursionID = E.ExcursionID
             JOIN tblTRIP T ON ET.TripID = T.TripID
-        WHERE T.TripName = @TripN
+        WHERE T. = @TripN
             AND E.ExcursionName = @ExcN)
     IF @ExcursionTrip_ID IS NULL
     BEGIN
@@ -71,43 +72,85 @@ AS
     ELSE
         COMMIT TRAN T1
 
+/* Added, new SP
+   Create procedure to add rows into tblROUTE_LOCATION table for arrival and departure locations,
+   using nested stored procedures */
 
-/* Synthetic Transactions
-    tblCUST_BOOK_EXC_TRIP
-*/
-CREATE PROCEDURE WRAPPER_INSERT_CustBOOKEXCTRIP
-@RUN INT
+-- Find LocationID
+CREATE PROCEDURE findLocationID
+@LocName VARCHAR(100),
+@LocID INT OUTPUT
 AS
-    DECLARE @CustBooking_Rand INT, @ExcrTrip_Rand INT, @CB_PK INT, @ET_PK INT, @CB_Count INT, @ET_Count INT
-    DECLARE @F VARCHAR(50), @L VARCHAR(50), @B Datetime
-    SET @CB_Count = (SELECT COUNT(*) FROM tblCUST_BOOK)
+    SET @LocID = (
+        SELECT LocationID FROM tblLOCATION WHERE LocationName = @LocName
+    )
+GO
 
-    WHILE @RUN > 0
-    BEGIN
-        SET
+-- Find RouteID
+CREATE PROCEDURE findRouteID
+@RouteName VARCHAR(100),
+@RouteID INT OUTPUT
+AS
+    SET @RouteID = (
+        SELECT RouteID
+        FROM tblROUTE WHERE RouteName = @RouteName
+    )
+GO
+
+--insert
+CREATE PROCEDURE insertRouteLocArrDep
+@RouName VARCHAR(300),
+@DepLoc VARCHAR(100),
+@ArrLoc VARCHAR(100)
+
+AS
+    DECLARE @RouID INT, @DepLocID INT, @ArrLocID INT
+    EXEC findRouteID
+    @RouteName = @RouName,
+    @RouteID = @RouID OUTPUT
+
+    IF @RouID IS NULL
+        BEGIN
+            PRINT 'RouteID is null, no such excursion for this trip'
+            RAISERROR ('@RouID must not be null', 11, 1)
+            RETURN
+        END
 
 
+    EXEC findLocationID
+@LocName = @DepLoc,
+@LocID = @DepLocID OUTPUT
 
-    EXEC insertCUST_BOOK_EXC_TRIP
-    @CustF = ,
-    @CustL = ,
-    @CustBD = ,
-    @BookingNum = ,
-    @ExcN = ,
-    @TripN = ,
-    @RegisTime = ,
-    @Cost =
+    IF @DepLocID IS NULL
+        BEGIN
+            PRINT 'DepLocID is null, no such excursion for this trip'
+            RAISERROR ('@DepLocID must not be null', 11, 1)
+            RETURN
+        END
 
-SET @RUN = @RUN - 1
-PRINT @RUN
-END
+    EXEC findLocationID
+    @LocName = @ArrLoc,
+    @LocID = @ArrLocID OUTPUT
 
-insertCUST_BOOK_EXC_TRIP
-@CustF VARCHAR(50),
-@CustL VARCHAR(50),
-@CustBD Datetime,
-@BookingNum char(7),
-@ExcN VARCHAR(50),
-@TripN VARCHAR(50),
-@RegisTime DATETIME,
-@Cost NUMERIC(8,2)
+    IF @ArrLoc IS NULL
+        BEGIN
+            PRINT 'ArrLoc is null, no such excursion for this trip'
+            RAISERROR ('@ArrLoc must not be null', 11, 1)
+            RETURN
+        END
+
+    BEGIN TRAN T1
+        INSERT INTO tblROUTE_LOCATION(RouteID, RouteLocTypeID, LocationID)
+        VALUES(@RouID, (SELECT RouteLocTypeID FROM tblROUTE_LOCATION_TYPE WHERE RouteLocTypeName = 'Departure'), @DepLocID)
+
+        INSERT INTO tblROUTE_LOCATION(RouteID, RouteLocTypeID, LocationID)
+        VALUES(@RouID, (SELECT RouteLocTypeID FROM tblROUTE_LOCATION_TYPE WHERE RouteLocTypeName = 'Arrival'), @ArrLocID)
+
+        IF @@ERROR <> 0
+            BEGIN
+                ROLLBACK TRAN T1
+            END
+        ELSE
+            COMMIT TRAN T1
+
+GO

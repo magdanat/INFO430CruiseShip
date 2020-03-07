@@ -1,23 +1,25 @@
+USE CRUISE
 /* Computed Columns */
 /* CC 1
-Total excursion cost for a customer for successfully-finished(status cannot be 'canceled') trips in the past 10 years */
+Total excursion cost for a customer for successfully-finished(status  be 'Valid') trips in the past 10 years */
 CREATE FUNCTION totalExcursionSpent10Years(@PK INT)
 RETURNS NUMERIC(8,2)
 AS
 BEGIN
     DECLARE @RET NUMERIC(8,2)
-    SET @RET =
-    (SELECT SUM(CBET.Cost) FROM tblCUST_BOOK_EXC_TRIP CBET
-        JOIN tblCUST_BOOK CB ON CBET.CustBookingID = CB.CustBookingID
-        JOIN tblCUSTOMER C ON CB.CustID = C.CustID
-        JOIN tblBOOKING B ON CB.BookingID = B.BookingID
-        JOIN tblBOOKING_STATUS BS ON B.BookStatusID = BS.BookStatusID
-        JOIN tblTRIP_CABIN TC on B.TripCabinID = TC.TripCabinID
-        JOIN tblTRIP T on TC.TripID = T.TripID
-    WHERE T.StartDate >= (SELECT GETDATE() - 365.25 * 10)
-        AND BS.BookStatusName = 'Valid'
-        AND T.EndDate <= (SELECT GETDATE()
-        AND C.CustID = @PK))
+    SET @RET = (
+        SELECT SUM(E.Cost) FROM tblEXCURSION E
+            JOIN tblEXCURSION_TRIP EXT ON E.ExcursionID = EXT.ExcursionID
+            JOIN tblCUST_BOOK_EXC_TRIP CBET ON EXT.ExcursionTripID = CBET.ExcursionTripID
+            JOIN tblCUST_BOOK CK ON CBET.CustBookingID = CK.CustBookingID
+            JOIN tblCUSTOMER C ON CK.CustID = C.CustID
+            JOIN tblBOOKING B ON CK.BookingID = B.BookingID
+            JOIN tblBOOKING_STATUS BS ON BS.BookStatusID = B.BookStatusID
+            JOIN tblTRIP T ON EXT.TripID = T.TripID
+        WHERE BS.BookStatusName != 'Valid'
+            AND T.StartDate >= (SELECT GETDATE() - 365.25 * 10)
+            AND T.EndDate <= (SELECT GETDATE())
+            AND C.CustID = @PK)
     RETURN @RET
 END
 

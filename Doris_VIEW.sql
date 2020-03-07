@@ -1,4 +1,5 @@
 /* VIEWS */
+USE CRUISE
 /* V1
 View the top 10 routes with the most trips with 'Mainstream' cruiseship_type within the last 10 years */
 CREATE VIEW vw_Top10RoutesWithMainstreamShip10Years
@@ -15,6 +16,29 @@ AS
     ORDER BY COUNT(DISTINCT T.TripID)
 GO
 
+/* Added, new V1
+ Find the cruiseship that has the most valid booking in total, for which the 'BookingTime' is between 2010 and 2020
+ for each Cruiseline using rank
+ */
+WITH CTE_ValidBookingCruiseship (CruiseshipID, CruiseshipName, CruiseLineID, numOfBooking, Dense_RankNumBooking)
+AS
+    (SELECT C.CruiseshipID, C.CruiseshipName, CRL.CruiseLineID, COUNT(DISTINCT B.BookingID) AS numOfBooking,
+            DENSE_RANK() OVER (PARTITION BY CRL.CruiseLineID ORDER BY COUNT(DISTINCT B.BookingID) DESC)
+                AS Dense_RankNumBooking
+    FROM TBLCRUISELINE CRL
+        JOIN tblCRUISESHIP C on CRL.CruiseLineID = C.CruiseLineID
+        JOIN tblTRIP T ON C.CruiseshipID = T.CruiseshipID
+        JOIN tblTRIP_CABIN TC on T.TripID = TC.TripID
+        JOIN tblBOOKING B ON TC.TripCabinID = B.TripCabinID
+        JOIN tblBOOKING_STATUS BS ON B.BookStatusID = BS.BookStatusID
+    WHERE B.BookingTime BETWEEN '2010-01-01' AND '2020-12-31'
+        AND BS.BookStatusName = 'Valid'
+    GROUP BY C.CruiseshipID, C.CruiseshipName, CRL.CruiseLineID)
+
+SELECT CruiseshipID, CruiseshipName, numOfBooking, Dense_RankNumBooking
+FROM CTE_ValidBookingCruiseship
+WHERE Dense_RankNumBooking = 1
+ORDER BY numOfBooking, Dense_RankNumBooking
 
 
 /* V2
