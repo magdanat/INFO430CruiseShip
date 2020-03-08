@@ -61,9 +61,3 @@ Check (dbo.fn_noBookingwhenTripStarts() = 0)
 GO
 
 
-
-
-
-
-
-SELECT * FROM tblTRIP
