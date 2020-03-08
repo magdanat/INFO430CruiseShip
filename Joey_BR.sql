@@ -1,4 +1,4 @@
----No customer who is under 21 can attend entertainment takes place at venue_type ‘bar’.
+---No customer who is under 21 can attend entertainment takes place at venue_type â€˜barâ€™.
 USE CRUISE
 
 CREATE FUNCTION fn_noUnder21atBar()
@@ -33,7 +33,7 @@ ADD CONSTRAINT ck_noUnder21atBar
 CHECK(dbo.fn_noUnder21atBar()=0)
 
 
----When a trip has happened you can’t book it
+---When a trip has happened you canâ€™t book it
 CREATE FUNCTION fn_noBookingwhenTripStarts()
 RETURNS INT
 
@@ -47,6 +47,7 @@ BEGIN
 		      JOIN tblTRIP_CABIN TC ON T.TripID = TC.TripID
 			  JOIN tblBOOKING B ON TC.TripCabinID = B.TripCabinID
 		   WHERE T.StartDate > (Select GetDate() - B.BookingTime)
+		   )
 		Begin Set @Ret = 1
 		End
 		Return @Ret
