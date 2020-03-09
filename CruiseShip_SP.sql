@@ -1,5 +1,5 @@
 -- Stored Procedures
-Create Procedure mag_getExcursionID
+/*Create Procedure mag_getExcursionID
 @E_N varchar(50),
 @C Int, --Capacity
 @E_ID Int Output
@@ -9,10 +9,21 @@ Set @E_ID = (Select ExcursionID
  From tblEXCURSION
  Where ExcursionName = @E_N
  And Capacity = @C)
+Go*/
+
+Create Procedure mag_getActivityID
+@A_N varchar(50),
+@C	Int,
+@A_ID Int Output
+As
+
+Set @A_ID = (Select ActivityID
+			From tblACTIVITY
+			Where ActivityName = @A_N
+			And Capacity = @C)
 Go
 
 Create Procedure mag_getTripID
-@T_N varchar(50),
 @S_D Datetime,
 @E_D Datetime,
 @T_ID Int Output
@@ -20,8 +31,7 @@ As
 
 Set @T_ID = (Select TripID
 From tblTRIP
-Where TripName = @T_N
-And StartDate = @S_D
+Where StartDate = @S_D
 And EndDate = @E_D)
 
 Go
@@ -80,63 +90,45 @@ Execute mag_getCustID
 
 Set @CB_ID = (Select CustBookingID
 From tblCUST_BOOK
-Where CustID = @CustID
+Where CustID = @Cust_ID
 And BookingID = @Book_ID)
-
-If  @CB_ID Is Null
-Begin
-Print '@CB_ID Is Null'
-Raiserror ('Null is breaking get statement', 11, 1)
-Return
-End
 Go
 
-Create Procedure mag_getExcursionTripID
-@T_Name varchar(50),
-@S_T Datetime,
-@E_T Datetime,
-@Start_Date Datetime,
-@End_Date Datetime,
-@Ex_Name varchar(50),
-@Cap Int,
-@ExcursionTripID Int Output
-
+Create Procedure mag_getActivity_TripID
+@S_T	Datetime,
+@E_T	Datetime,
+@Ac_Na	varchar(50),
+@Ca		Int,
+@St_D	Datetime,
+@En_D	Datetime,
+@AT_ID	Int Output
 As
 
-Declare @Ex_ID Int, @Tr_ID Int
+Declare @ACT_ID Int, @TR_ID Int
 
-Execute mag_getTripID
-@T_N = @T_Name,
-@S_D = @Start_Date,
-@E_D = @End_Date,
-@T_ID = @Tr_ID Output
-Execute mag_getExcursionID
-@E_N = @Ex_Name,
-@C = @Cap,
-@E_ID = @Ex_ID Output
+	Execute mag_getActivityID
+		@A_N = @Ac_Na,
+		@C = @Ca,
+		@A_ID = @ACT_ID Output
+	Execute mag_getTripID
+		@S_D = @St_D,
+		@E_D = @En_D,
+		@T_ID = @TR_ID Output
 
-Set @ExcursionTripID = (Select ExcursionTripID
-From tblEXCURSION_TRIP
-Where StartTime = @S_T
-And EndTime = @E_T
-And TripID = @Tr_ID
-And ExcrusionID = @Ex_ID)
-
-If @ExcursionTripID Is Null
-Begin
-Print '@ExcursionTripID is null'
-Raiserror ('Null is breaking get statement', 11, 1)
-Return
-End
+	Set @AT_ID = (Select ActivityTripID
+				 From tblACTIVITY_TRIP
+				Where TripID = @TR_ID
+				And ActivityID = @Act_ID
+				And StartTime = @S_T
+				And EndTime = @E_T)
 Go
 
 Create Procedure uspNew_Cust_Book_Act_Trip
 @C Numeric(8,2), -- Cost
 @R Datetime, -- Registime
-@Tr_Name varchar(50), -- Trip name
 @St_Time Datetime, -- Start time
 @En_Time Datetime, -- End time
-@E_Name varchar(50), -- Excursion name
+@A_Name varchar(50), -- Excursion name
 @St_Date Datetime, -- StartDate
 @En_Date Datetime, -- EndDate
 @Capac Int, -- Capacity
@@ -147,7 +139,7 @@ Create Procedure uspNew_Cust_Book_Act_Trip
 @Cust_Birth Datetime
 
 As
-	Declare @CustB_ID Int, @ExcurT_ID Int
+	Declare @CustB_ID Int, @ACTR_ID Int
 
 	Execute mag_getCust_BookID
 		@Book_N = @Book_Num,
@@ -156,42 +148,136 @@ As
 		@Cust_L = @Cust_Last,
 		@Cust_DOB = @Cust_Birth,
 		@CB_ID = @CustB_ID Output
-	Execute mag_getExcursionTripID
-		@T_Name = @Tr_Name,
+
+	If @CustB_ID Is Null
+	Begin
+		Print '@CustB_ID is Null'
+		Raiserror('Null is breaking insert statement', 11, 1)
+		Return
+	End
+
+	Execute mag_getActivity_TripID
 		@S_T = @St_Time,
 		@E_T = @En_Time,
-		@Start_date = @St_Date,
-		@End_Date = @En_Date,
-		@Ex_Name = @E_Name,
-		@Cap = @Capac,
-		@ExcursionTripID = @ExcurT_ID Output
+		@St_D = @St_Date,
+		@En_D = @En_Date,
+		@Ac_Na = @A_Name,
+		@Ca = @Capac,
+		@AT_ID = @ACTR_ID Output
 
-	Insert into tblCUST_BOOK_EXC_tRIP(Cost, RegistTime, ExcursionTripID, CustBookingID)
-	Values (@C, @R, @ExcurT_ID, @CustB_ID)
+	If @ACTR_ID Is Null
+	Begin
+		Print '@ACTR_ID Is Null'
+		Raiserror('Null is breaking insert statement', 11, 1)
+		Return
+	End
 
+Begin Tran t1
+	Insert into tblCUST_BOOK_ACT_TRIP(CustBookingID, ActivityTripID, Cost, RegisTime)
+	Values (@CustB_ID, @ACTR_ID, @C, @R)
+	If @@ERROR <> 0 
+		Begin
+			Rollback T1
+			End
+		Else
+			Commit T1
 Go
+
+-- Stored Procedure 2
+Create Procedure mag_getCruiseShipID
+@C_N varchar(50),
+@Capac Int,
+@M_D Datetime,
+@C_ID Int Output
+As
+
+Set @C_ID = (Select CruiseshipID
+			From tblCRUISESHIP
+			Where CruiseshipName = @C_N
+				And Capacity = @Capac
+				And ManufacturedDate = @M_D)
+Go
+
+Create Procedure mag_getVenueID
+@Cru_N varchar(50),
+@Cru_C Int,
+@Cru_MD Datetime,
+@V_N varchar(50),
+@V_Capac Int,
+@V_ID Int Output
+As
+
+	Declare @Cruise_ID Int
+
+	Execute mag_getCruiseShipID
+		@C_N = @Cru_N,
+		@Capac = @Cru_C,
+		@M_D = @Cru_MD,
+		@C_ID = @Cruise_ID Output
+
+	Set @V_ID = (Select VenueID
+				From tblVenues
+				Where VenueName = @V_N
+					And Capacity = @V_Capac
+					And CruiseshipID = @Cruise_ID)
+Go
+
+Create Procedure mag_getActivityTypeID
+@AT_N varchar(50),
+@AT_ID Int Output
+As
+	Set @AT_ID = (Select * from tblACTIVITY_TYPE
+				 Where ActivityTypeName = @AT_N)
+Go
+
 
 Create Procedure mag_uspNewActivity
 @A_N varchar(50),
 @A_D varchar(500),
-@C int
-
+@A_C Int,
+@Act_Na varchar(50),
+@Cruise_Na varchar(50),
+@Cruise_Capac Int,
+@Cruise_MaD	Datetime,
+@Venue_Na	varchar(50),
+@Venue_Capac Int
 As
 	
-	If @A_N Is Null
+	Declare @ActTy_ID Int, @Venue_ID Int
+
+	Execute  mag_getActivityTypeID
+		@AT_N = @Act_Na,
+		@AT_ID = @ActTy_ID Output
+
+	If @ActTy_ID Is Null
 	Begin
-		Print '@A_N is null'
-		Raiserror ('Null is breaking insert statement', 11, 1)
+		Print '@ActTy_ID is Null'
+		Raiserror('Null is breaking insert statement', 11, 1)
 		Return
 	End
 
-	If @C Is Null
+	Execute mag_getVenueID
+		@V_N = @Venue_Na,
+		@V_Capac = @Venue_Capac,
+		@Cru_N = @Cruise_Na,
+		@Cru_C = @Cruise_Capac,
+		@Cru_MD = @Cruise_Mad,
+		@V_ID = @Venue_ID Output
+
+	If @Venue_ID Is Null
 	Begin
-		Print 'C is null'
-		Raiserror ('Null is breaking insert statement', 11, 1)
+		Print '@Venue_ID Is Null'
+		Raiserror('Null is breaking insert statement', 11, 1)
 		Return
 	End
 
-	Insert Into tblACTIVITY(ActivityName, ActivityDescr, Capacity)
-	Values (@A_N, @A_D, @C)
+	Begin Tran T1
+		Insert Into tblACTIVITY(VenueID, ActivityTypeID, ActivityName, ActivityDescr, Capacity)
+		Values (@Venue_ID, @ActTy_ID, @A_N, @A_D, @A_C)
+		If @@ERROR <> 0
+			Begin
+				Rollback Tran t1
+			End
+		Else
+			Commit Tran T1
 Go
