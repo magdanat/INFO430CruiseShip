@@ -1,26 +1,9 @@
-/* Doris ---- Stored Procedures */
 USE CRUISE
+/*
+ WRAPPER tblCUST_BOOK_EXC_TRIP
+ Populate tblCUST_BOOK_EXC_TRIP
+ */
 
-/* SP: Get CustBookingID (Related to Synthetic transaction)*/
-CREATE PROCEDURE getCustBookID
-@CustFname VARCHAR(50),
-@CustLname VARCHAR(50),
-@CustDOB Date,
-@BookingNum char(7),
-@CustBookID INT OUTPUT
-AS
-    SET @CustBookID = (
-        SELECT CustBookingID FROM tblCUST_BOOK CB
-            JOIN tblCUSTOMER C ON CB.CustID = C.CustID
-            JOIN tblBOOKING B ON CB.BookingID = B.BookingID
-        WHERE C.CustFname = @CustFname
-            AND C.CustLname = @CustLname
-            AND C.CustDOB = @CustDOB
-            AND B.BookingNumber = @BookingNum
-        )
-GO
-
-/* SP: Get ExcursionTripID (Related to Synthetic transaction)*/
 CREATE PROCEDURE getExcurTripID
 @ShipName varchar(50),
 @TripStartDate Date,
@@ -44,9 +27,24 @@ AS
         )
 GO
 
+CREATE PROCEDURE getCustBookID
+@CustFname VARCHAR(50),
+@CustLname VARCHAR(50),
+@CustDOB Date,
+@BookingNum char(7),
+@CustBookID INT OUTPUT
+AS
+    SET @CustBookID = (
+        SELECT CustBookingID FROM tblCUST_BOOK CB
+            JOIN tblCUSTOMER C ON CB.CustID = C.CustID
+            JOIN tblBOOKING B ON CB.BookingID = B.BookingID
+        WHERE C.CustFname = @CustFname
+            AND C.CustLname = @CustLname
+            AND C.CustDOB = @CustDOB
+            AND B.BookingNumber = @BookingNum
+        )
+GO
 
-/* SP 1 (Related to Synthetic transaction)
-    Add new row in tblCUST_BOOK_EXC_TRIP */
 CREATE PROCEDURE sp_insertCUST_BOOK_EXC_TRIP
 @CustomerFname VARCHAR(50),
 @CustomerLname VARCHAR(50),
@@ -103,94 +101,8 @@ AS
             COMMIT TRANSACTION T1
 GO
 
-
-/* SP 2
-   Create procedure to add rows into tblROUTE_LOCATION table for arrival and departure locations,
-   using nested stored procedures */
-
--- Find LocationID
-CREATE PROCEDURE findLocationID
-@LocName VARCHAR(100),
-@LocID INT OUTPUT
-AS
-    SET @LocID = (
-        SELECT LocationID FROM tblLOCATION WHERE LocationName = @LocName
-    )
-GO
-
--- Find RouteID
-CREATE PROCEDURE findRouteID
-@RouteName VARCHAR(100),
-@RouteID INT OUTPUT
-AS
-    SET @RouteID = (
-        SELECT RouteID
-        FROM tblROUTE WHERE RouteName = @RouteName
-    )
-GO
-
---insert
-CREATE PROCEDURE insertRouteLocArrDep
-@RouName VARCHAR(300),
-@DepLoc VARCHAR(100),
-@ArrLoc VARCHAR(100)
-
-AS
-    DECLARE @RouID INT, @DepLocID INT, @ArrLocID INT
-    EXEC findRouteID
-    @RouteName = @RouName,
-    @RouteID = @RouID OUTPUT
-
-    IF @RouID IS NULL
-        BEGIN
-            PRINT 'RouteID is null, no such excursion for this trip'
-            RAISERROR ('@RouID must not be null', 11, 1)
-            RETURN
-        END
-
-
-    EXEC findLocationID
-@LocName = @DepLoc,
-@LocID = @DepLocID OUTPUT
-
-    IF @DepLocID IS NULL
-        BEGIN
-            PRINT 'DepLocID is null, no such excursion for this trip'
-            RAISERROR ('@DepLocID must not be null', 11, 1)
-            RETURN
-        END
-
-    EXEC findLocationID
-    @LocName = @ArrLoc,
-    @LocID = @ArrLocID OUTPUT
-
-    IF @ArrLoc IS NULL
-        BEGIN
-            PRINT 'ArrLoc is null, no such excursion for this trip'
-            RAISERROR ('@ArrLoc must not be null', 11, 1)
-            RETURN
-        END
-
-    BEGIN TRAN T1
-        INSERT INTO tblROUTE_LOCATION(RouteID, RouteLocTypeID, LocationID)
-        VALUES(@RouID, (SELECT RouteLocTypeID FROM tblROUTE_LOCATION_TYPE WHERE RouteLocTypeName = 'Departure'), @DepLocID)
-
-        INSERT INTO tblROUTE_LOCATION(RouteID, RouteLocTypeID, LocationID)
-        VALUES(@RouID, (SELECT RouteLocTypeID FROM tblROUTE_LOCATION_TYPE WHERE RouteLocTypeName = 'Arrival'), @ArrLocID)
-
-        IF @@ERROR <> 0
-            BEGIN
-                ROLLBACK TRAN T1
-            END
-        ELSE
-            COMMIT TRAN T1
-GO
-
-
-
-
-/* Synthetic Transaction for tblCUST_BOOK_EXC_TRIP
- Wrapper around sp_insertCUST_BOOK_EXC_TRIP
+/*
+ Wrapper sp_insertCUST_BOOK_EXC_TRIP
  */
 CREATE PROCEDURE WRAPPER_insertCUST_BOOK_EXC_TRIP
 @RUN INT
@@ -274,7 +186,3 @@ AS
 EXEC WRAPPER_insertCUST_BOOK_EXC_TRIP
 @RUN = 1000
 GO
-
-
-
-

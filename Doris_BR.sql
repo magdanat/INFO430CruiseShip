@@ -46,7 +46,8 @@ BEGIN
             JOIN tblCRUISESHIP_TYPE CT ON C.CruiseshipTypeID = CT.CruiseshipTypeID
             JOIN tblCUST_Book CB ON B.BookingID = CB.BookingID
             JOIN tblCUSTOMER CUS ON CB.CustID = CUS.CustID
-        WHERE CUS.CustDOB > (B.BookingTime - 365.25 * 3)
+        WHERE DATEDIFF()
+              CUS.CustDOB > (B.BookingTime - 365.25 * 3)
             AND CT.CruiseshipTypeName = 'Expedition Cruise Ship'
         )
     BEGIN
