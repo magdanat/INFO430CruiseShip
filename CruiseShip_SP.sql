@@ -11,7 +11,7 @@ Set @E_ID = (Select ExcursionID
  And Capacity = @C)
 Go*/
 
-Create Procedure mag_getActivityID
+Alter Procedure mag_getActivityID
 @A_N varchar(50),
 @C	Int,
 @A_ID Int Output
@@ -23,9 +23,9 @@ Set @A_ID = (Select ActivityID
 			And Capacity = @C)
 Go
 
-Create Procedure mag_getTripID
-@S_D Datetime,
-@E_D Datetime,
+Alter Procedure mag_getTripID
+@S_D Date,
+@E_D Date,
 @T_ID Int Output
 As
 
@@ -36,10 +36,10 @@ And EndDate = @E_D)
 
 Go
 
-Create Procedure mag_getCustID
+Alter Procedure mag_getCustID
 @C_F varchar(50),
 @C_L varchar(50),
-@DOB Datetime,
+@DOB Date,
 @C_ID Int Output
 
 As
@@ -48,15 +48,14 @@ Set @C_ID = (Select CustID
 From tblCUSTOMER
 Where CustFname = @C_F
 And CustLName = @C_L
-And DateOfBirth = @DOB)
+And CustDOB = @DOB)
 
 Go
 
-Create Procedure mag_getBookingID
+Alter Procedure mag_getBookingID
 @B_N char(7),
 @B_T Datetime,
 @B_ID Int Output
-
 As
 
 Set @B_ID = (Select BookingID
@@ -66,12 +65,12 @@ And BookingTime = @B_T)
 
 Go
 
-Create Procedure mag_getCust_BookID
+Alter Procedure mag_getCust_BookID
 @Book_N char(7),
 @Book_T Datetime,
 @Cust_F varchar(50),
 @Cust_L varchar(50),
-@Cust_DOB Datetime,
+@Cust_DOB Date,
 @CB_ID Int Output
 
 As
@@ -94,13 +93,13 @@ Where CustID = @Cust_ID
 And BookingID = @Book_ID)
 Go
 
-Create Procedure mag_getActivity_TripID
+Alter Procedure mag_getActivity_TripID
 @S_T	Datetime,
 @E_T	Datetime,
 @Ac_Na	varchar(50),
 @Ca		Int,
-@St_D	Datetime,
-@En_D	Datetime,
+@St_D	Date,
+@En_D	Date,
 @AT_ID	Int Output
 As
 
@@ -123,12 +122,12 @@ Declare @ACT_ID Int, @TR_ID Int
 				And EndTime = @E_T)
 Go
 
-Create Procedure uspNew_Cust_Book_Act_Trip
+Alter Procedure uspNew_Cust_Book_Act_Trip
 @C Numeric(8,2), -- Cost
 @R Datetime, -- Registime
 @St_Time Datetime, -- Start time
 @En_Time Datetime, -- End time
-@A_Name varchar(50), -- Excursion name
+@A_Name varchar(50), -- Activity name
 @St_Date Datetime, -- StartDate
 @En_Date Datetime, -- EndDate
 @Capac Int, -- Capacity
@@ -136,7 +135,7 @@ Create Procedure uspNew_Cust_Book_Act_Trip
 @Book_Time Datetime,  -- Booking time
 @Cust_First varchar(50),
 @Cust_Last varchar(50),
-@Cust_Birth Datetime
+@Cust_Birth Date
 
 As
 	Declare @CustB_ID Int, @ACTR_ID Int
@@ -172,19 +171,19 @@ As
 		Return
 	End
 
-Begin Tran t1
+Begin Tran T1
 	Insert into tblCUST_BOOK_ACT_TRIP(CustBookingID, ActivityTripID, Cost, RegisTime)
 	Values (@CustB_ID, @ACTR_ID, @C, @R)
 	If @@ERROR <> 0 
 		Begin
-			Rollback T1
+			Rollback Tran T1
 			End
 		Else
-			Commit T1
+			Commit Tran T1
 Go
 
 -- Stored Procedure 2
-Create Procedure mag_getCruiseShipID
+Alter Procedure mag_getCruiseShipID
 @C_N varchar(50),
 @Capac Int,
 @M_D Datetime,
@@ -198,7 +197,7 @@ Set @C_ID = (Select CruiseshipID
 				And ManufacturedDate = @M_D)
 Go
 
-Create Procedure mag_getVenueID
+Alter Procedure mag_getVenueID
 @Cru_N varchar(50),
 @Cru_C Int,
 @Cru_MD Datetime,
@@ -222,19 +221,19 @@ As
 					And CruiseshipID = @Cruise_ID)
 Go
 
-Create Procedure mag_getActivityTypeID
+Alter Procedure mag_getActivityTypeID
 @AT_N varchar(50),
 @AT_ID Int Output
 As
-	Set @AT_ID = (Select * from tblACTIVITY_TYPE
+	Set @AT_ID = (Select ActivityTypeID from tblACTIVITY_TYPE
 				 Where ActivityTypeName = @AT_N)
 Go
 
-
-Create Procedure mag_uspNewActivity
+Alter Procedure mag_uspNewActivity
 @A_N varchar(50),
 @A_D varchar(500),
 @A_C Int,
+@A_Cost Numeric(8,2),
 @Act_Na varchar(50),
 @Cruise_Na varchar(50),
 @Cruise_Capac Int,
@@ -272,8 +271,8 @@ As
 	End
 
 	Begin Tran T1
-		Insert Into tblACTIVITY(VenueID, ActivityTypeID, ActivityName, ActivityDescr, Capacity)
-		Values (@Venue_ID, @ActTy_ID, @A_N, @A_D, @A_C)
+		Insert Into tblACTIVITY(VenueID, ActivityTypeID, ActivityName, ActivityDescr, Capacity, Cost)
+		Values (@Venue_ID, @ActTy_ID, @A_N, @A_D, @A_C, @A_Cost)
 		If @@ERROR <> 0
 			Begin
 				Rollback Tran t1
