@@ -33,7 +33,7 @@ CHECK (dbo.no20kgBaggageForInteriorCabin() = 0)
 /* BR 2
 Enforce the business rule to prevent new inserts into CUST_BOOK for if the customer is not older than 3 years old
    for an 'Expedition Cruise Ship' type */
-CREATE FUNCTION noCustBookingForInfants()
+DROP FUNCTION noCustBookingForInfants()
 RETURNS INT
 AS
 BEGIN
@@ -46,8 +46,7 @@ BEGIN
             JOIN tblCRUISESHIP_TYPE CT ON C.CruiseshipTypeID = CT.CruiseshipTypeID
             JOIN tblCUST_Book CB ON B.BookingID = CB.BookingID
             JOIN tblCUSTOMER CUS ON CB.CustID = CUS.CustID
-        WHERE DATEDIFF()
-              CUS.CustDOB > (B.BookingTime - 365.25 * 3)
+        WHERE DATEDIFF(year,  CUS.CustDOB, CAST(B.BookingTime AS DATE)) <= 3
             AND CT.CruiseshipTypeName = 'Expedition Cruise Ship'
         )
     BEGIN

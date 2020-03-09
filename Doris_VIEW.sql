@@ -25,23 +25,23 @@ SELECT CruiseshipID, CruiseshipName, CruiseLineID, numOfBooking, Dense_RankNumBo
 FROM CTE_ValidBookingCruiseship
 WHERE Dense_RankNumBooking = 1
 
-
 /* V2
-View all customers who have registered for more than 50 activities within all trips he/she attended in last 5 years
-   and who have also successfully have more than 5 trips living in 'Suites' in last 5 years */
-ALTER VIEW vw_ManyActivities5Years_MoreThan5Trips5Years
+View all customers who have registered for more than 5 excursions within all trips he/she attended in next 10 years
+   and who is also going to have more than 1 trips in next 10 years */
+
+CREATE VIEW vw_ManyExcursions10Years_MoreThan1Trips10Years
 AS
-    SELECT C.CustFname, C.CustLname, subQ.NumSuites5Years,
-                    COUNT(DISTINCT CBAT.CustBookActTripID) AS numActivities5Years
+    SELECT C.CustFname, C.CustLname, subQ.NumTrip10Years,
+                    COUNT(DISTINCT CBET.CustBookExcTripID) AS numExcursions10Years
     FROM tblTRIP T
         JOIN tblTRIP_CABIN TC ON T.TripID = TC.TripID
         JOIN tblBOOKING B ON TC.TripCabinID = B.TripCabinID
         JOIN tblBOOKING_STATUS BS ON B.BookStatusID = BS.BookStatusID
         JOIN tblCUST_BOOK CB ON B.BookingID = CB.BookingID
         JOIN tblCUSTOMER C ON CB.CustID = C.CustID
-        JOIN tblCUST_BOOK_ACT_TRIP CBAT on CB.CustBookingID = CBAT.CustBookingID
+        JOIN tblCUST_BOOK_EXC_TRIP CBET on CB.CustBookingID = CBET.CustBookingID
         JOIN (
-            SELECT COUNT(DISTINCT CB2.CustBookingID) AS NumSuites5Years, C2.CustID FROM tblTRIP T2
+            SELECT COUNT(DISTINCT CB2.CustBookingID) AS NumTrip10Years, C2.CustID FROM tblTRIP T2
                 JOIN tblTRIP_CABIN TC2 ON T2.TripID = TC2.TripID
                 JOIN tblCABIN CA2 ON TC2.CabinID = CA2.CabinID
                 JOIN tblCABIN_TYPE CT2 on CA2.CabinTypeID = CT2.CabinTypeID
@@ -50,19 +50,15 @@ AS
                 JOIN tblCUST_BOOK CB2 ON B2.BookingID = CB2.BookingID
                 JOIN tblCUSTOMER C2 ON CB2.CustID = C2.CustID
             WHERE BS2.BookStatusName = 'Valid'
-                AND T2.StartDate <= (SELECT CONVERT(DATE, (Select GetDate())))
-                AND T2.EndDate <= (SELECT CONVERT(DATE, (Select GetDate())))
-                AND T2.EndDate >= (SELECT DATEADD(year, -10, (SELECT CONVERT(DATE, (Select GetDate())))))
-                AND CT2.CabinTypeName = 'Suites'
+                AND T2.StartDate <= (SELECT DATEADD(year, 10, (SELECT CONVERT(DATE, (Select GetDate())))))
+                AND T2.StartDate >= (SELECT CONVERT(DATE, (Select GetDate())))
             GROUP BY C2.CustID
-            HAVING COUNT(DISTINCT CB2.CustBookingID) > 5
+            HAVING COUNT(DISTINCT CB2.CustBookingID) >= 2
         ) AS subQ ON subQ.CustID = C.CustID
     WHERE BS.BookStatusName = 'Valid'
-        AND T.StartDate <= (SELECT CONVERT(DATE, (Select GetDate())))
-        AND T.EndDate <= (SELECT CONVERT(DATE, (Select GetDate())))
-        AND T.EndDate >= (SELECT DATEADD(year, -5, (SELECT CONVERT(DATE, (Select GetDate())))))
-    GROUP BY C.CustFname, C.CustLname, subQ.NumSuites5Years
-    HAVING COUNT(DISTINCT CBAT.CustBookingID) > 50
+        AND T.StartDate <= (SELECT DATEADD(year, 10, (SELECT CONVERT(DATE, (Select GetDate())))))
+        AND T.StartDate >= (SELECT CONVERT(DATE, (Select GetDate())))
+    GROUP BY C.CustFname, C.CustLname, subQ.NumTrip10Years
+    HAVING COUNT(DISTINCT CBET.CustBookExcTripID) >= 5
 GO
-
-SELECT * FROM vw_ManyActivities5Years_MoreThan5Trips5Years
+SELECT * FROM vw_ManyExcursions10Years_MoreThan1Trips10Years

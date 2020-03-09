@@ -29,7 +29,7 @@ ADD ExcursionSpentRecent10Years AS (dbo.totalExcursionSpent10Years(CustID))
 GO
 
 /* CC 2
-Average number of passengers on board for each route within 5 years */
+Average number of passengers on board for each route within last 10 years */
 CREATE FUNCTION averageNumPassengers(@PK INT)
 RETURNS INT
 AS
@@ -44,22 +44,24 @@ BEGIN
         JOIN tblBOOKING_STATUS BS ON B.BookStatusID = BS.BookStatusID
         JOIN tblCUST_BOOK CB ON B.BookingID = CB.BookingID
     WHERE BS.BookStatusName = 'Valid'
-        AND T.StartDate <= (SELECT GETDATE())
-        AND T.EndDate <= (SELECT GETDATE())
-        AND T.EndDate >= (SELECT GETDATE() - 5 * 365.25)
+        AND T.StartDate <= (SELECT CONVERT(DATE, (Select GetDate())))
+        AND T.EndDate <= (SELECT CONVERT(DATE, (Select GetDate())))
+        AND T.EndDate >= (SELECT DATEADD(year, -10, (SELECT CONVERT(DATE, (Select GetDate())))))
         AND R.RouteID = @PK)
 
     SET @TripCount = (
         SELECT COUNT(DISTINCT T2.TripID) FROM tblROUTE R2
         JOIN tblCRUISESHIP C2 ON R2.RouteID = C2.RouteID
         JOIN tblTRIP T2 ON C2.CruiseshipID = T2.CruiseshipID
-    WHERE T2.StartDate <= (SELECT GETDATE())
-        AND T2.EndDate <= (SELECT GETDATE())
-        AND T2.EndDate >= (SELECT GETDATE() - 5 * 365.25)
+    WHERE T2.StartDate <= (SELECT CONVERT(DATE, (Select GetDate())))
+        AND T2.EndDate <= (SELECT CONVERT(DATE, (Select GetDate())))
+        AND T2.EndDate >= (SELECT DATEADD(year, -10, (SELECT CONVERT(DATE, (Select GetDate())))))
         AND R2.RouteID = @PK
         )
-
-    SET @RET = @Total / @TripCount
+    IF(@TripCount = 0)
+            SET @RET = 0
+    ELSE
+        SET @RET = (@Total / @TripCount)
     RETURN @RET
 END
 GO

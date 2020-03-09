@@ -129,6 +129,7 @@ AS
     )
 GO
 
+
 --insert
 CREATE PROCEDURE insertRouteLocArrDep
 @RouName VARCHAR(300),
@@ -274,7 +275,3 @@ AS
 EXEC WRAPPER_insertCUST_BOOK_EXC_TRIP
 @RUN = 1000
 GO
-
-
-
-
