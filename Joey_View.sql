@@ -9,7 +9,7 @@ AS
       JOIN tblEXCURSION ET ON ET.ExcursionTypeID = E.ExcursionTypeID
 	  JOIN tblEXCURSION_TRIP ETR ON E.ExcursionID = ETR.ExcursionID
    GROUP BY E.ExcursionID, E.ExcursionName, NumExcursionType
-   ORDER BY NumExcursionType DESC
+
 
 GO
 
@@ -25,7 +25,7 @@ AS
 		JOIN tblEXCURSION E ON RP.RoutePortID = E.RoutePortID 
 		JOIN tblEXCURSION_TRIP ETR ON E.ExcursionID = ETR.ExcursionID
 	GROUP BY C.CityID, C.CityName,NumTrip_Excursion
-	ORDER BY NumTrip_Excursion
+
 
 GO
 
