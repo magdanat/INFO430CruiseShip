@@ -1,4 +1,4 @@
-
+USE CRUISE
 ---View Staff who have been on more than 2 trips between 2009 and 2019, who have also deal with more than 5 incidents
 CREATE VIEW vw_More2Trips_More5Incidents
 
