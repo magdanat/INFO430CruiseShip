@@ -1,32 +1,37 @@
 
----View the numbers of each excursion types (number of excursion trip) in descending order
-
-CREATE VIEW vw_NumExcurstionType 
-
-AS 
-  
-   SELECT TOP 7 WITH TIES E.ExcursionID, E.ExcursionName, COUNT(DISTINCT ET.ExcursionTypeID) AS NumExcursionType FROM tblEXCURSION E
-      JOIN tblEXCURSION ET ON ET.ExcursionTypeID = E.ExcursionTypeID
-	  JOIN tblEXCURSION_TRIP ETR ON E.ExcursionID = ETR.ExcursionID
-   GROUP BY E.ExcursionID, E.ExcursionName, NumExcursionType
-
-
-GO
-
----View the top 50 cities that have the most trip_excursion
-
-CREATE VIEW vw_Top50CitiesMostTripExcursion
+---View Staff who have been on more than 2 trips between 2009 and 2019, who have also deal with more than 5 incidents
+CREATE VIEW vw_More2Trips_More5Incidents
 
 AS
 
-   SELECT TOP 50 WITH TIES C.CityID, C.CityName, COUNT(DISTINCT ETR.ExcursionTripID) AS NumTrip_Excursion FROM tblCity C
-        JOIN tblPORT P ON C.CityID = P.CityID
-		JOIN tblROUTE_PORT RP ON P.PortID = RP.PortID
-		JOIN tblEXCURSION E ON RP.RoutePortID = E.RoutePortID 
-		JOIN tblEXCURSION_TRIP ETR ON E.ExcursionID = ETR.ExcursionID
-	GROUP BY C.CityID, C.CityName,NumTrip_Excursion
+  SELECT S.StaffID, S.StaffFname, S.StaffLname, S.StaffDOB,COUNT(DISTINCT T.TripID) AS NumTrip FROM tblSTAFF S
+         JOIN tblSTAFF_TRIP_POSITION STP ON S.StaffID = STP.StaffID
+		 JOIN tblTRIP T ON STP.TripID = T.TripID
+   JOIN(
+     SELECT S.StaffID, S.StaffFname, S.StaffLname, S.StaffDOB, COUNT(DISTINCT I.IncidentID) AS NumIncident FROM tblSTAFF S
+	    JOIN tblSTAFF_TRIP_POSITION STP ON S.StaffID = STP.StaffID
+		JOIN tblINCIDENT I ON STP.StaffTripPosID = I.StaffTripPosID
+		WHERE I.IncidentStartTime  BETWEEN '2009-01-01' AND '2019-12-31'
+		 AND I.IncidentEndTime BETWEEN '2009-01-01' AND '2019-12-31'
+		GROUP BY S.StaffID,S.StaffFname, S.StaffLname, S.StaffDOB
+		Having COUNT(DISTINCT I.IncidentID)>= 5 ) AS Subq1 ON S.StaffID= Subq1.StaffID
+
+   WHERE T.StartDate BETWEEN '2009-01-01' AND '2019-12-31'
+		 AND T.EndDate BETWEEN '2009-01-01' AND '2019-12-31'
+   GROUP BY S.StaffID, S.StaffFname, S.StaffLname, S.StaffDOB, subq1.NumIncident
+   HAVING COUNT(DISTINCT T.TripID)>= 2
+
+ SELECT * FROM vw_More2Trips_More5Incidents
 
 
-GO
 
+---Use CTE and NTILE to devide customers into 50 parts based on their number of valid booking
+WITH CTE_50CustomerPart(CustFname, CustLname, CustDOB, Divideby50Part) 
 
+AS( 
+     SELECT C.CustFname, C.CustLname, C.CustDOB, NTILE(50) OVER (ORDER BY B.BookingID) AS Divideby50Part
+     FROM tblCUSTOMER C
+       JOIN tblCUST_BOOK CB ON C.CustID = CB.CustID
+       JOIN tblBOOKING B ON CB.BookingID = B.BookingID)
+	 	
+SELECT * FROM CTE_50CustomerPart
