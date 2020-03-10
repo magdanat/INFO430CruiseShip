@@ -27,7 +27,7 @@ WHERE Dense_RankNumBooking = 1
 
 /* V2
 View all customers who have registered for more than 5 excursions within all trips he/she attended in next 10 years
-   and who is also going to have more than 1 trips in next 10 years */
+   and who is also going to have more than 1 trip in next 10 years */
 
 CREATE VIEW vw_ManyExcursions10Years_MoreThan1Trips10Years
 AS

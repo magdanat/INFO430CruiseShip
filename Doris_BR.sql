@@ -1,8 +1,10 @@
 /* Business Rules */
 /* BR 1
 Enforce the business rule to prevent adding a row into tblBAGGAGE if the cabin_type is ‘Interior’
-   and the total baggage weight is already 50kg
+   and the total baggage weight is already 50kg for a cruiseshipType to be 'Expedition Cruise Ship'
  */
+
+SELECT * FROM tblCRUISESHIP_TYPE
 USE CRUISE
 CREATE FUNCTION no20kgBaggageForInteriorCabin()
 RETURNS INT
@@ -15,7 +17,10 @@ BEGIN
             JOIN tblTRIP_CABIN TC ON B.TripCabinID = TC.TripCabinID
             JOIN tblCABIN C ON TC.CabinID = C.CabinID
             JOIN tblCABIN_TYPE CT ON C.CabinTypeID = CT.CabinTypeID
+            JOIN tblCRUISESHIP CR on C.CruiseshipID = CR.CruiseshipID
+            JOIN tblCRUISESHIP_TYPE CST on CR.CruiseshipTypeID = CST.CruiseshipTypeID
         WHERE CT.CabinTypeName = 'Interior'
+            AND CST.CruiseshipTypeName = 'Expedition Cruise Ship'
         GROUP BY B.BookingID
         HAVING SUM(BA.BaggageWeight) >= 50
         )
@@ -29,11 +34,11 @@ GO
 ALTER TABLE tblBAGGAGE
 ADD CONSTRAINT CK_noMoreBaggageInteriorCabin
 CHECK (dbo.no20kgBaggageForInteriorCabin() = 0)
-
+GO
 /* BR 2
 Enforce the business rule to prevent new inserts into CUST_BOOK for if the customer is not older than 3 years old
    for an 'Expedition Cruise Ship' type */
-DROP FUNCTION noCustBookingForInfants()
+CREATE FUNCTION noCustBookingForInfants()
 RETURNS INT
 AS
 BEGIN

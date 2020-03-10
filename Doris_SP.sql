@@ -1,184 +1,97 @@
 /* Doris ---- Stored Procedures */
 USE CRUISE
 
-/* SP: Get CustBookingID (Related to Synthetic transaction)*/
-CREATE PROCEDURE getCustBookID
-@CustFname VARCHAR(50),
-@CustLname VARCHAR(50),
-@CustDOB Date,
-@BookingNum char(7),
-@CustBookID INT OUTPUT
+/*1. Add a new tblBOOKING and a new tblCUST_BOOK with an existing customer */
+CREATE PROCEDURE getCustID
+@F VARCHAR(50),
+@L VARCHAR(50),
+@B DATE,
+@CustID INT OUTPUT
 AS
-    SET @CustBookID = (
-        SELECT CustBookingID FROM tblCUST_BOOK CB
-            JOIN tblCUSTOMER C ON CB.CustID = C.CustID
-            JOIN tblBOOKING B ON CB.BookingID = B.BookingID
-        WHERE C.CustFname = @CustFname
-            AND C.CustLname = @CustLname
-            AND C.CustDOB = @CustDOB
-            AND B.BookingNumber = @BookingNum
-        )
+    SET @CustID = (
+        SELECT CustID FROM tblCUSTOMER
+            WHERE CustFname = @F
+                AND CustLname = @L
+                AND CustDOB = @B)
 GO
 
-/* SP: Get ExcursionTripID (Related to Synthetic transaction)*/
-CREATE PROCEDURE getExcurTripID
-@ShipName varchar(50),
-@TripStartDate Date,
-@TripEndDate Date,
-@ExcurName varchar(225),
-@ExcurTripStartTime Datetime,
-@ExcurTripEndTime Datetime,
-@ExcurTripID INT OUTPUT
+-- getTripID
+CREATE PROCEDURE getTripID
+@CrName VARCHAR(50),
+@TStart Date,
+@TEnd Date,
+@TID INT OUTPUT
 AS
-    SET @ExcurTripID = (
-        SELECT ET.ExcursionTripID FROM tblTRIP T
-            JOIN tblCRUISESHIP C ON T.CruiseshipID = C.CruiseshipID
-            JOIN tblEXCURSION_TRIP ET on T.TripID = ET.TripID
-            JOIN tblEXCURSION E ON ET.ExcursionID = E.ExcursionID
-        WHERE C.CruiseshipName = @ShipName
-            AND T.StartDate = @TripStartDate
-            AND T.EndDate = @TripEndDate
-            AND E.ExcursionName = @ExcurName
-            AND ET.StartTime = @ExcurTripStartTime
-            AND ET.EndTime = @ExcurTripEndTime
+    DECLARE @Cr_ID INT = (SELECT CruiseshipID FROM tblCRUISESHIP WHERE CruiseshipName = @CrName)
+    SET @TID = (
+        SELECT TripID FROM tblTRIP
+        WHERE CruiseshipID = @Cr_ID
+            AND StartDate = @TStart
+            AND EndDate = @TEnd
         )
 GO
-
-
-/* SP 1 (Related to Synthetic transaction)
-    Add new row in tblCUST_BOOK_EXC_TRIP */
-CREATE PROCEDURE sp_insertCUST_BOOK_EXC_TRIP
-@CustomerFname VARCHAR(50),
-@CustomerLname VARCHAR(50),
-@CustomerDOB Date,
-@BookingNumber char(7),
-@CruiseshipName varchar(50),
-@Trip_StartDate Date,
-@Trip_EndDate Date,
-@ExcursionName varchar(225),
-@ExcursionTStartTime Datetime,
-@ExcursionTEndTime Datetime,
-@RegisterTime DateTime
+-- getTripCabinID
+CREATE PROCEDURE getTripCabinID
+@CSName VARCHAR(50),
+@TripStartDay Date,
+@TripEndDay Date,
+@CabinNum INT,
+@TCID INT OUTPUT
 AS
-    DECLARE @CB_ID INT, @ET_ID INT
-    EXEC getExcurTripID
-    @ShipName = @CruiseshipName,
-    @TripStartDate = @Trip_StartDate,
-    @TripEndDate = @Trip_EndDate,
-    @ExcurName = @ExcursionName,
-    @ExcurTripStartTime = @ExcursionTStartTime,
-    @ExcurTripEndTime = @ExcursionTEndTime,
-    @ExcurTripID = @ET_ID OUTPUT
+    DECLARE @T_ID INT, @C_ID INT, @Cr_ID INT
+    SET @Cr_ID = (SELECT CruiseshipID FROM tblCRUISESHIP WHERE CruiseshipName = @CSName)
 
-    IF @ET_ID IS NULL
+    EXEC getTripID
+    @CrName = @CSName,
+        @TStart = @TripStartDay,
+    @TEnd = @TripEndDay,
+        @TID = @T_ID OUTPUT
+
+    IF @T_ID IS NULL
     BEGIN
-        PRINT '@ET_ID is null'
-        RAISERROR ('@ET_ID cannot be NULL', 11 , 1)
+        PRINT 'No such trip in the system. Check again!'
+        RAISERROR ('@T_ID must not be null', 11, 1)
         RETURN
     END
 
-    EXEC getCustBookID
-    @CustFname = @CustomerFname,
-    @CustLname = @CustomerLname,
-    @CustDOB = @CustomerDOB,
-    @BookingNum = @BookingNumber,
-    @CustBookID = @CB_ID OUTPUT
+    SET @C_ID = (SELECT CabinID FROM tblCABIN
+                WHERE CabinNum = @CabinNum
+                    AND CruiseshipID = @Cr_ID)
 
-    IF @CB_ID IS NULL
+    IF @C_ID IS NULL
     BEGIN
-        PRINT '@CB_ID is null'
-        RAISERROR ('@CB_ID cannot be NULL', 11 , 1)
+        PRINT 'No such Cabin in the system. Check again!'
+        RAISERROR ('@C_ID must not be null', 11, 1)
         RETURN
     END
 
-    BEGIN TRANSACTION T1
-        INSERT INTO tblCUST_BOOK_EXC_TRIP(RegisTime, ExcursionTripID, CustBookingID)
-        VALUES (@RegisterTime, @ET_ID, @CB_ID)
-
-        IF @@ERROR <> 0
-        BEGIN
-            ROLLBACK TRANSACTION T1
-        END
-        ELSE
-            COMMIT TRANSACTION T1
+    SET @TCID = (
+        SELECT TripCabinID FROM tblTRIP_CABIN
+        WHERE TripID = @T_ID
+        AND CabinID = @C_ID
+        )
 GO
 
-
-/* SP 2
-   Create procedure to add rows into tblROUTE_LOCATION table for arrival and departure locations,
-   using nested stored procedures */
-
--- Find LocationID
-CREATE PROCEDURE findLocationID
-@LocName VARCHAR(100),
-@LocID INT OUTPUT
+-- Insert into tblBOOKING
+CREATE PROCEDURE insertNewBOOKING
+@CruiseShipName VARCHAR(50),
+@TripStartTime  Date,
+@TripEndTime Date,
+@CabNum INT,
+@BookingTime Datetime,
+@BookingNumber Char(7)
 AS
-    SET @LocID = (
-        SELECT LocationID FROM tblLOCATION WHERE LocationName = @LocName
-    )
-GO
-
--- Find RouteID
-CREATE PROCEDURE findRouteID
-@RouteName VARCHAR(100),
-@RouteID INT OUTPUT
-AS
-    SET @RouteID = (
-        SELECT RouteID
-        FROM tblROUTE WHERE RouteName = @RouteName
-    )
-GO
-
-
---insert
-CREATE PROCEDURE insertRouteLocArrDep
-@RouName VARCHAR(300),
-@DepLoc VARCHAR(100),
-@ArrLoc VARCHAR(100)
-
-AS
-    DECLARE @RouID INT, @DepLocID INT, @ArrLocID INT
-    EXEC findRouteID
-    @RouteName = @RouName,
-    @RouteID = @RouID OUTPUT
-
-    IF @RouID IS NULL
-        BEGIN
-            PRINT 'RouteID is null, no such excursion for this trip'
-            RAISERROR ('@RouID must not be null', 11, 1)
-            RETURN
-        END
-
-
-    EXEC findLocationID
-@LocName = @DepLoc,
-@LocID = @DepLocID OUTPUT
-
-    IF @DepLocID IS NULL
-        BEGIN
-            PRINT 'DepLocID is null, no such excursion for this trip'
-            RAISERROR ('@DepLocID must not be null', 11, 1)
-            RETURN
-        END
-
-    EXEC findLocationID
-    @LocName = @ArrLoc,
-    @LocID = @ArrLocID OUTPUT
-
-    IF @ArrLoc IS NULL
-        BEGIN
-            PRINT 'ArrLoc is null, no such excursion for this trip'
-            RAISERROR ('@ArrLoc must not be null', 11, 1)
-            RETURN
-        END
+    DECLARE @TripCabinID INT
+    EXEC getTripCabinID
+    @CSName = @CruiseShipName,
+@TripStartDay = @TripStartTime,
+@TripEndDay = @TripEndTime,
+@CabinNum = @CabNum,
+@TCID = @TripCabinID OUTPUT
 
     BEGIN TRAN T1
-        INSERT INTO tblROUTE_LOCATION(RouteID, RouteLocTypeID, LocationID)
-        VALUES(@RouID, (SELECT RouteLocTypeID FROM tblROUTE_LOCATION_TYPE WHERE RouteLocTypeName = 'Departure'), @DepLocID)
-
-        INSERT INTO tblROUTE_LOCATION(RouteID, RouteLocTypeID, LocationID)
-        VALUES(@RouID, (SELECT RouteLocTypeID FROM tblROUTE_LOCATION_TYPE WHERE RouteLocTypeName = 'Arrival'), @ArrLocID)
-
+        INSERT INTO tblBOOKING(BookingNumber, BookStatusID, TripCabinID, BookingTime)
+        VALUES(@BookingNumber, (SELECT BookStatusID FROM tblBOOKING_STATUS WHERE BookStatusName = 'Valid'), @TripCabinID, @BookingTime)
         IF @@ERROR <> 0
             BEGIN
                 ROLLBACK TRAN T1
@@ -187,91 +100,102 @@ AS
             COMMIT TRAN T1
 GO
 
+-- Insert into tblCUST_BOOK
 
-
-
-/* Synthetic Transaction for tblCUST_BOOK_EXC_TRIP
- Wrapper around sp_insertCUST_BOOK_EXC_TRIP
- */
-CREATE PROCEDURE WRAPPER_insertCUST_BOOK_EXC_TRIP
-@RUN INT
+CREATE PROCEDURE insertNewBookingCustForExistingCust
+@Fname VARCHAR(50),
+@Lname VARCHAR(50),
+@BirthDate Date,
+@CName VARCHAR(50),
+@TStartTime  Date,
+@TEndTime Date,
+@CabinNumber INT,
+@BTime Datetime,
+@BNumber Char(7)
 AS
-    DECLARE @RowCount_ET INT, @RowCount_CB INT, @RandPK_ET INT, @RandPK_CB INT
-    SET @RowCount_ET = (SELECT COUNT(*) FROM tblEXCURSION_TRIP)
-    SET @RowCount_CB = (SELECT COUNT(*) FROM tblCUST_BOOK)
+    DECLARE @Cust_ID INT, @B_ID INT
+    EXEC getCustID
+@F = @Fname,
+    @L = @Lname,
+@B = @BirthDate,
+        @CustID = @Cust_ID OUTPUT
 
-    DECLARE @C_Fname VARCHAR(50), @C_Lname VARCHAR(50), @C_DOB Date
-    DECLARE @B_Number char(7), @C_Name varchar(50)
-    DECLARE @T_StartDate Date, @T_EndDate Date, @E_Name varchar(225), @ET_StartTime Datetime, @ET_EndTime Datetime
-    DECLARE @R_Time DateTime, @RandInt INT
+    IF @Cust_ID IS NULL
+        BEGIN
+            PRINT 'No such customer in the system. Check again!'
+            RAISERROR ('@Cust_ID must not be null', 11, 1)
+            RETURN
+        END
 
-    WHILE @RUN > 0
+    EXEC insertNewBOOKING
+@CruiseShipName = @CName,
+@TripStartTime  = @TStartTime,
+@TripEndTime = @TEndTime,
+@CabNum = @CabinNumber,
+@BookingTime = @BTime,
+@BookingNumber = @BNumber
+
+    SET @B_ID = SCOPE_IDENTITY()
+    IF @B_ID IS NULL
     BEGIN
-        SET @RandPK_ET = (SELECT RAND() * @RowCount_ET + 1)
-        SET @RandPK_CB = (SELECT RAND() * @RowCount_CB + 1)
-        PRINT @RandPK_ET
-        PRINT @RandPK_CB
-
-        SET @C_Fname = (SELECT C.CustFname FROM tblCUSTOMER C
-                            JOIN tblCUST_BOOK CB ON C.CustID = CB.CustID
-                            JOIN tblBOOKING B ON CB.BookingID = B.BookingID
-                        WHERE CB.CustBookingID = @RandPK_CB)
-        SET @C_Lname = (SELECT C.CustLname FROM tblCUSTOMER C
-                            JOIN tblCUST_BOOK CB ON C.CustID = CB.CustID
-                            JOIN tblBOOKING B ON CB.BookingID = B.BookingID
-                        WHERE CB.CustBookingID = @RandPK_CB)
-        SET @C_DOB = (SELECT C.CustDOB FROM tblCUSTOMER C
-                            JOIN tblCUST_BOOK CB ON C.CustID = CB.CustID
-                            JOIN tblBOOKING B ON CB.BookingID = B.BookingID
-                        WHERE CB.CustBookingID = @RandPK_CB)
-        SET @B_Number = (SELECT B.BookingNumber FROM tblBOOKING B
-                            JOIN tblCUST_BOOK CB ON B.BookingID = CB.BookingID
-                        WHERE CB.CustBookingID = @RandPK_CB)
-        SET @C_Name = (SELECT C.CruiseshipName FROM tblCRUISESHIP C
-                            JOIN tblTRIP T ON C.CruiseshipID = T.CruiseshipID
-                            JOIN tblEXCURSION_TRIP ET ON T.TripID = ET.TripID
-                        WHERE ET.ExcursionTripID = @RandPK_ET)
-
-        SET @T_StartDate = (SELECT T.StartDate FROM tblTRIP T
-                                JOIN tblEXCURSION_TRIP ET on T.TripID = ET.TripID
-                            WHERE ET.ExcursionTripID = @RandPK_ET)
-
-        SET @T_EndDate = (SELECT T.EndDate FROM tblTRIP T
-                                JOIN tblEXCURSION_TRIP ET on T.TripID = ET.TripID
-                            WHERE ET.ExcursionTripID = @RandPK_ET)
-
-        SET @E_Name = (SELECT E.ExcursionName FROM tblEXCURSION E
-                            JOIN tblEXCURSION_TRIP ET ON E.ExcursionID = ET.ExcursionID
-                       WHERE ET.ExcursionTripID = @RandPK_ET)
-        SET @ET_StartTime = (SELECT ET.StartTime  FROM tblEXCURSION E
-                                JOIN tblEXCURSION_TRIP ET ON E.ExcursionID = ET.ExcursionID
-                            WHERE ET.ExcursionTripID = @RandPK_ET)
-
-        SET @ET_EndTime = (SELECT ET.EndTime FROM tblEXCURSION E
-                                JOIN tblEXCURSION_TRIP ET ON E.ExcursionID = ET.ExcursionID
-                            WHERE ET.ExcursionTripID = @RandPK_ET)
-
-        SET @RandInt = (SELECT FLOOR(RAND() * 10))
-        SET @R_Time = ((SELECT B.BookingTime FROM tblBOOKING B
-                            JOIN tblCUST_BOOK CB on B.BookingID = CB.BookingID
-                        WHERE CB.CustBookingID = @RandPK_CB) + @RandInt * 365.25)
-
-        EXEC sp_insertCUST_BOOK_EXC_TRIP
-        @CustomerFname = @C_Fname,
-    @CustomerLname = @C_Lname,
-    @CustomerDOB = @C_DOB,
-    @BookingNumber = @B_Number,
-    @CruiseshipName = @C_Name,
-    @Trip_StartDate = @T_StartDate,
-    @Trip_EndDate = @T_EndDate,
-    @ExcursionName = @E_Name,
-    @ExcursionTStartTime = @ET_StartTime,
-    @ExcursionTEndTime = @ET_EndTime,
-    @RegisterTime = @R_Time
-
-        SET @RUN = @RUN - 1
+        PRINT 'No such booking in the system. Check again!'
+        RAISERROR ('@B_ID must not be null', 11, 1)
+        RETURN
     END
 
-EXEC WRAPPER_insertCUST_BOOK_EXC_TRIP
-@RUN = 1000
+    BEGIN TRAN T2
+    INSERT INTO tblCUST_BOOK(CustID, BookingID)
+    VALUES(@Cust_ID, @B_ID)
+    IF @@ERROR <> 0
+        BEGIN
+            ROLLBACK TRAN T2
+        END
+    ELSE
+        COMMIT TRAN T2
 GO
+
+/*
+2. Add a new row in EXCURSION_TRIP with exisiting Trip and existing excursion (ExcursionName is unque)
+ */
+
+CREATE PROCEDURE insertExcurTrip
+@CruiseShip_Name VARCHAR(50),
+@Trip_Start_Time Date,
+@Trip_End_Time Date,
+@ExcName VARCHAR(225)
+AS
+    DECLARE @Ex_ID INT, @T_ID INT
+    SET @Ex_ID = (SELECT ExcursionID FROM tblEXCURSION WHERE ExcursionName = @ExcName)
+
+    IF @Ex_ID IS NULL
+    BEGIN
+        PRINT 'No such excursion in the system. Check again!'
+        RAISERROR ('@Ex_ID must not be null', 11, 1)
+        RETURN
+    END
+
+     EXEC getTripID
+    @CrName = @CruiseShip_Name,
+    @TStart = @Trip_Start_Time,
+    @TEnd = @Trip_End_Time,
+    @TID = @T_ID OUTPUT
+
+    IF @T_ID IS NULL
+    BEGIN
+        PRINT 'No such Trip in the system. Check again!'
+        RAISERROR ('@T_ID must not be null', 11, 1)
+        RETURN
+    END
+
+    BEGIN TRAN T3
+    INSERT INTO tblEXCURSION_TRIP(TripID, StartTime, EndTime, ExcursionID)
+    VALUES(@T_ID, @Trip_Start_Time, @Trip_End_Time, @Ex_ID)
+    IF @@ERROR <> 0
+    BEGIN
+        ROLLBACK TRAN T3
+    END
+    ELSE
+        COMMIT TRAN T3
+GO
+
+

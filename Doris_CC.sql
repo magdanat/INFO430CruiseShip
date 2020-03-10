@@ -17,8 +17,8 @@ BEGIN
             JOIN tblBOOKING_STATUS BS ON BS.BookStatusID = B.BookStatusID
             JOIN tblTRIP T ON EXT.TripID = T.TripID
         WHERE BS.BookStatusName != 'Valid'
-            AND T.StartDate >= (SELECT GETDATE() - 365.25 * 10)
-            AND T.EndDate <= (SELECT GETDATE())
+            AND T.StartDate >= (SELECT DATEADD(year, -10, (SELECT CONVERT(DATE, (Select GetDate())))))
+            AND T.EndDate <= (SELECT CONVERT(DATE, (Select GetDate())))
             AND C.CustID = @PK)
     RETURN @RET
 END
