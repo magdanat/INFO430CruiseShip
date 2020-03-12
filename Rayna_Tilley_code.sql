@@ -105,8 +105,7 @@ BEGIN
 	RAISERROR('@ExcursionTripID cannot be null.',11,1)
 	RETURN
 END
-BEGIN TRAN T1
-SELECT * FROM tblCUST_BOOK_EXC_TRIP
+BEGIN TRAN T
 INSERT INTO tblCUST_BOOK_EXC_TRIP(RegisTime, ExcursionTripID, CustBookingID)
 VALUES(@RegisTime, @ExcursionTripID, @CustBookingID)
 IF @@ERROR <> 0
@@ -344,7 +343,7 @@ ORDER BY SUM(E.Cost) DESC
 
 -- Synthetic Transactions
 -- 1. tblCUST_BOOK_EXC_TRIP
-CREATE PROCEDURE WRAPPER_cruise_NewRowCustBookExcTrip
+ALTER PROCEDURE WRAPPER_cruise_NewRowCustBookExcTrip
 @Run INT
 AS
 DECLARE @RegTime datetime, @EStart datetime, @EEnd datetime, @CFname varchar(50),
@@ -358,6 +357,8 @@ BEGIN
 	SET @CustBook_PK = (SELECT RAND() * @CustBookRowCount)
 	SET @ExcTrip_PK = (SELECT RAND() * @ExcTripRowCount)
 	SET @EStart = (SELECT StartTime FROM tblEXCURSION_TRIP WHERE ExcursionTripID = @ExcTrip_PK)
+	-- Set @RegTime equal to a random datetime before EStart.
+	SET @RegTime = (SELECT DATEADD(DAY, -3, @EStart))
 	SET @EEnd = (SELECT EndTime FROM tblEXCURSION_TRIP WHERE ExcursionTripID = @ExcTrip_PK)
 	SET @CFname = (SELECT C.CustFName FROm tblCUSTOMER C
 			JOIN tblCUST_BOOK CB ON C.CustID = CB.CustID
@@ -396,6 +397,7 @@ BEGIN
 	@ShipName = @SName,
 	@TripStartDay = @TStartDay,
 	@TripEndDay = @TEndDay
+	SET @Run = @Run - 1
 END
 EXEC WRAPPER_cruise_NewRowCustBookExcTrip
-@Run = 1000
+@Run = 3
