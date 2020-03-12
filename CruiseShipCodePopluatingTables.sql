@@ -14,3 +14,8 @@ Select * from tblVenues
 --	Populating tblActivity
 Select * from tblActivity_Type
 Select * from tblActivity
+
+Select * from tblACTIVITY_TRIP
+Select * from tblCUST_BOOK_ACT_TRIP
+Select * from tblCustomer
+Select * from tblBooking

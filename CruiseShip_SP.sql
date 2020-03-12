@@ -1,16 +1,4 @@
 -- Stored Procedures
-/*Create Procedure mag_getExcursionID
-@E_N varchar(50),
-@C Int, --Capacity
-@E_ID Int Output
-As
-
-Set @E_ID = (Select ExcursionID
- From tblEXCURSION
- Where ExcursionName = @E_N
- And Capacity = @C)
-Go*/
-
 Alter Procedure mag_getActivityID
 @A_N varchar(50),
 @C	Int,
@@ -183,6 +171,9 @@ Begin Tran T1
 Go
 
 -- Stored Procedure 2
+-- Inserting a new activity that a customer went on
+
+-- Gets ID of a cruiseship
 Alter Procedure mag_getCruiseShipID
 @C_N varchar(50),
 @Capac Int,
@@ -197,6 +188,7 @@ Set @C_ID = (Select CruiseshipID
 				And ManufacturedDate = @M_D)
 Go
 
+-- Stored procedure for getting the id value of a venue
 Alter Procedure mag_getVenueID
 @Cru_N varchar(50),
 @Cru_C Int,
@@ -221,6 +213,7 @@ As
 					And CruiseshipID = @Cruise_ID)
 Go
 
+-- Stored procedure for getting activitytype ID
 Alter Procedure mag_getActivityTypeID
 @AT_N varchar(50),
 @AT_ID Int Output
@@ -229,6 +222,7 @@ As
 				 Where ActivityTypeName = @AT_N)
 Go
 
+-- Stored procedure for inserting a new activity
 Alter Procedure mag_uspNewActivity
 @A_N varchar(50),
 @A_D varchar(500),
