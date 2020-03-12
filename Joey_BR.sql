@@ -10,8 +10,8 @@ BEGIN
  
     DECLARE @RET INT = 0
 	   IF EXISTS(
-	       SELECT * FROM tblVENUE V
-		     JOIN tblVENUE_TYPE VT ON V.VenueTypeID = VT.VenueType.ID
+	       SELECT * FROM tblVENUES V
+		     JOIN tblVENUE_TYPE VT ON V.VenueTypeID = VT.VenueTypeID
 		     JOIN tblCRUISESHIP C ON V.CruiseshipID = C.CruiseshipID
 		     JOIN tblTRIP T ON C.CruiseshipID = T.CruiseshipID
 		     JOIN tblTRIP_CABIN TC ON T.TripID = TC.TripID
@@ -19,7 +19,7 @@ BEGIN
 		     JOIN tblCUST_BOOK CB ON B.BookingID = CB.BookingID
 		     JOIN tblCUSTOMER CUS ON CB.CustID = CUS.CustID
 		   WHERE CUS.CustDOB >= (Select GetDate() - 365.25 * 21)
-		     AND V.VenueTypeName = 'Bar'
+		     AND V.VenueName = 'Bar'
 			 )
 
     BEGIN
@@ -28,9 +28,11 @@ BEGIN
 	RETURN @RET 
 END
 
-ALTER TABLE tblVenue
+ALTER TABLE tblVENUES
 ADD CONSTRAINT ck_noUnder21atBar
 CHECK(dbo.fn_noUnder21atBar()=0)
+
+GO
 
 
 ---When a trip has happened you can’t book it
@@ -61,3 +63,9 @@ Check (dbo.fn_noBookingwhenTripStarts() = 0)
 GO
 
 
+
+
+
+
+
+SELECT * FROM tblTRIP
