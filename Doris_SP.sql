@@ -1,6 +1,3 @@
-/* Doris ---- Stored Procedures */
-USE CRUISE
-
 /*1. Add a new tblBOOKING and a new tblCUST_BOOK with an existing customer */
 CREATE PROCEDURE getCustID
 @F VARCHAR(50),
@@ -84,10 +81,17 @@ AS
     DECLARE @TripCabinID INT
     EXEC getTripCabinID
     @CSName = @CruiseShipName,
-@TripStartDay = @TripStartTime,
-@TripEndDay = @TripEndTime,
-@CabinNum = @CabNum,
-@TCID = @TripCabinID OUTPUT
+    @TripStartDay = @TripStartTime,
+    @TripEndDay = @TripEndTime,
+    @CabinNum = @CabNum,
+    @TCID = @TripCabinID OUTPUT
+
+    IF @TripCabinID IS NULL
+    BEGIN
+        PRINT 'No such TripCabin in the system. Check again!'
+        RAISERROR ('@TripCabinID must not be null', 11, 1)
+        RETURN
+    END
 
     BEGIN TRAN T1
         INSERT INTO tblBOOKING(BookingNumber, BookStatusID, TripCabinID, BookingTime)
@@ -101,7 +105,6 @@ AS
 GO
 
 -- Insert into tblCUST_BOOK
-
 CREATE PROCEDURE insertNewBookingCustForExistingCust
 @Fname VARCHAR(50),
 @Lname VARCHAR(50),
@@ -128,12 +131,12 @@ AS
         END
 
     EXEC insertNewBOOKING
-@CruiseShipName = @CName,
-@TripStartTime  = @TStartTime,
-@TripEndTime = @TEndTime,
-@CabNum = @CabinNumber,
-@BookingTime = @BTime,
-@BookingNumber = @BNumber
+    @CruiseShipName = @CName,
+    @TripStartTime  = @TStartTime,
+    @TripEndTime = @TEndTime,
+    @CabNum = @CabinNumber,
+    @BookingTime = @BTime,
+    @BookingNumber = @BNumber
 
     SET @B_ID = SCOPE_IDENTITY()
     IF @B_ID IS NULL

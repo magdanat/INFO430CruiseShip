@@ -28,8 +28,6 @@ ALTER TABLE tblCUSTOMER
 ADD ExcursionSpentRecent10Years AS (dbo.totalExcursionSpent10Years(CustID))
 GO
 
-
-
 /* CC 2
 Average number of passengers on board for each route within last 10 years */
 CREATE FUNCTION averageNumPassengers(@PK INT)
