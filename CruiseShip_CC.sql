@@ -5,6 +5,8 @@
 -- Trip has to be in past 10 years
 -- Succesfully Finished
 -- Total Cost
+Use Cruise 
+Go
 
 Create Function fTotalCostPastTenYears
 (@PK Int)
@@ -19,7 +21,7 @@ Begin
 			Join tblCUST_BOOK CB On CBT.CustBookingID = CB.CustBookingID
 			Join tblCUSTOMER C On CB.CustID = C.CustID
 			Join tblBOOKING B On CB.BookingID = B.BookingID
-			Join tblBOOKING_STATUS BS On B.BookingStatusID = BS.BookingStatusID
+			Join tblBOOKING_STATUS BS On B.BookStatusID = BS.BookStatusID
 		Where T.StartDate >= (Select GetDate() - 365.25 * 10)
 			And BS.BookStatusName = 'Valid'
 			And T.EndDate <= (Select GetDate())
@@ -43,7 +45,7 @@ Begin
 	Declare @Ret Int
 	Set @Ret = (
 		Select Count(*) From tblCUST_BOOK_ACT_TRIP CBAT
-			Join tblACTIVITY_TRIP ATP On CBAT.ActivityTripID = ATAP.ActivityTripID
+			Join tblACTIVITY_TRIP ATP On CBAT.ActivityTripID = ATP.ActivityTripID
 			Join tblTRIP T On ATP.TripID = T.TripID	
 		Where ATP.ActivityID = @AK
 		And T.TripID = @TK)

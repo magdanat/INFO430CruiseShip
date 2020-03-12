@@ -1,3 +1,6 @@
+Use Cruise
+Go
+
 -- Stored Procedures
 Create Procedure mag_getActivityID
 @A_N varchar(50),
