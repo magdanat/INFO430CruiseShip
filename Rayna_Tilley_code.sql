@@ -75,8 +75,6 @@ CREATE PROC cruise_NewRowCustBookExcTrip
 @CustLname varchar(50),
 @CustDOB date,
 @BookingNumber char(7),
-@ExcursionStartTime datetime,
-@ExcursionEndTime datetime,
 @ExcursionName varchar(50),
 @ShipName varchar(50),
 @TripStartDay date,
@@ -95,8 +93,8 @@ BEGIN
 	RETURN
 END
 EXEC cruise_GetExcursionTripID
-@STime = @ExcursionStartTime,
-@ETime = @ExcursionEndTime,
+@STime = @ExcStart,
+@ETime = @ExcEnd,
 @ExcName = @ExcursionName,
 @SName = @ShipName,
 @TripStart = @TripStartDay,
@@ -345,5 +343,59 @@ GROUP BY C.CustID, C.CustFname, C.CustLname, C.CustDOB
 ORDER BY SUM(E.Cost) DESC
 
 -- Synthetic Transactions
--- 1. tblCUST_BOOK_ACT_TRIP
--- Is the the while loop function???
+-- 1. tblCUST_BOOK_EXC_TRIP
+CREATE PROCEDURE WRAPPER_cruise_NewRowCustBookExcTrip
+@Run INT
+AS
+DECLARE @RegTime datetime, @EStart datetime, @EEnd datetime, @CFname varchar(50),
+	@CLname varchar(50), @CDOB date, @BNum char(7), @ExcName varchar(50), 
+	@SName varchar(50), @TStartDay date, @TEndDay date
+DECLARE @CustBook_PK INT, @ExcTrip_PK INT
+DECLARE @CustBookRowCount INT = (SELECT COUNT(*) FROM tblCUST_BOOK)
+DECLARE @ExcTripRowCount INT = (SELECT COUNT(*) FROM tblEXCURSION_TRIP)
+WHILE @Run > 0
+BEGIN
+	SET @CustBook_PK = (SELECT RAND() * @CustBookRowCount)
+	SET @ExcTrip_PK = (SELECT RAND() * @ExcTripRowCount)
+	SET @EStart = (SELECT StartTime FROM tblEXCURSION_TRIP WHERE ExcursionTripID = @ExcTrip_PK)
+	SET @EEnd = (SELECT EndTime FROM tblEXCURSION_TRIP WHERE ExcursionTripID = @ExcTrip_PK)
+	SET @CFname = (SELECT C.CustFName FROm tblCUSTOMER C
+			JOIN tblCUST_BOOK CB ON C.CustID = CB.CustID
+		WHERE CB.CustBookingID = @CustBook_PK)
+	SET @CLname = (SELECT C.CustLname FROm tblCUSTOMER C
+			JOIN tblCUST_BOOK CB ON C.CustID = CB.CustID
+		WHERE CB.CustBookingID = @CustBook_PK)
+	SET @CDOB = (SELECT C.CustDOB FROm tblCUSTOMER C
+			JOIN tblCUST_BOOK CB ON C.CustID = CB.CustID
+		WHERE CB.CustBookingID = @CustBook_PK)
+	SET @BNum = (SELECT BookingNumber FROM tblBOOKING B
+			JOIN tblCUST_BOOK CB ON B.BookingID = CB.BookingID
+		WHERE CB.CustBookingID = @CustBook_PK)
+	SET @ExcName = (SELECT ExcursionName FROM tblEXCURSION E
+			JOIN tblEXCURSION_TRIP ET ON E.ExcursionID = ET.ExcursionID
+		WHERE ET.ExcursionTripID = @ExcTrip_PK)
+	SET @SName = (SELECT CruiseshipName FROM tblCRUISESHIP C
+			JOIN tblTRIP T ON C.CruiseshipID = T.CruiseshipID
+			JOIN tblEXCURSION_TRIP ET ON T.TripID = ET.TripID
+		WHERE ET.ExcursionTripID = @ExcTrip_PK)
+	SET @TStartDay = (SELECT StartDate FROM tblTRIP T
+			JOIN tblEXCURSION_TRIP ET ON T.TripID = ET.TripID
+		WHERE ET.ExcursionTripID = @ExcTrip_PK)
+	SET @TEndDay = (SELECT EndDate FROM tblTRIP T
+			JOIN tblEXCURSION_TRIP ET ON T.TripID = ET.TripID
+		WHERE ET.ExcursionTripID = @ExcTrip_PK)
+	EXEC cruise_NewRowCustBookExcTrip
+	@RegisTime = @RegTime,
+	@ExcStart = @EStart,
+	@ExcEnd = @EEnd,
+	@CustFname = @CFname,
+	@CustLname = @CLname,
+	@CustDOB = @CDOB,
+	@BookingNumber = @BNum,
+	@ExcursionName = @ExcName,
+	@ShipName = @SName,
+	@TripStartDay = @TStartDay,
+	@TripEndDay = @TEndDay
+END
+EXEC WRAPPER_cruise_NewRowCustBookExcTrip
+@Run = 1000
