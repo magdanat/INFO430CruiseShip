@@ -40,7 +40,7 @@ ADD CONSTRAINT NoHikesFor90
 CHECK(dbo.cruise_CustBookExcTrip_noHikesFor90() = 0)
 GO
 -- 2. No more than the capacity for each cabin.
-ALTER FUNCTION cruise_CustBookExcTrip_NoCanceled()
+CREATE FUNCTION cruise_CustBookExcTrip_NoCanceled()
 RETURNS INT
 AS
 BEGIN
