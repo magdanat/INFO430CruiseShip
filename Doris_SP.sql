@@ -174,6 +174,8 @@ AS
         RETURN
     END
 
+    SELECT * FROM tblEXCURSION_TRIP
+
      EXEC getTripID
     @CrName = @CruiseShip_Name,
     @TStart = @Trip_Start_Time,
@@ -197,5 +199,3 @@ AS
     ELSE
         COMMIT TRAN T3
 GO
-
-

@@ -1,5 +1,5 @@
 USE CRUISE
-/* Computed Columns */
+/* Doris ---- Computed Columns */
 /* CC 1
 Total excursion cost for a customer for successfully-finished(status  be 'Valid') trips in the past 10 years */
 CREATE FUNCTION totalExcursionSpent10Years(@PK INT)
@@ -27,6 +27,8 @@ GO
 ALTER TABLE tblCUSTOMER
 ADD ExcursionSpentRecent10Years AS (dbo.totalExcursionSpent10Years(CustID))
 GO
+
+
 
 /* CC 2
 Average number of passengers on board for each route within last 10 years */

@@ -1,4 +1,4 @@
-/* Business Rules */
+/* Doris ---- Business Rules */
 /* BR 1
 Enforce the business rule to prevent adding a row into tblBAGGAGE if the cabin_type is ‘Interior’
    and the total baggage weight is already 50kg for a cruiseshipType to be 'Expedition Cruise Ship'

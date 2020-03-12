@@ -1,6 +1,5 @@
-/* VIEWS */
 USE CRUISE
-
+/* Doris ---- VIEWS */
 /* V1
  Find the cruiseship that has the most valid booking in total, for which the 'BookingTime' is between 2010 and 2020
  for each Cruiseline using rank
@@ -24,6 +23,7 @@ AS
 SELECT CruiseshipID, CruiseshipName, CruiseLineID, numOfBooking, Dense_RankNumBooking
 FROM CTE_ValidBookingCruiseship
 WHERE Dense_RankNumBooking = 1
+
 
 /* V2
 View all customers who have registered for more than 5 excursions within all trips he/she attended in next 10 years
