@@ -260,27 +260,69 @@ ALTER TABLE tblTRIP_CABIN ADD TotCustCab AS (dbo.cruise_TotalCabinCapacity_fn(Tr
 GO
 
 -- Views
--- 1. View the top 10 curiseships that have the most trips within 5 years
--- Probably too simple...
-SELECT TOP 10 with ties C.CruiseshipID, C.CruiseshipName, COUNT(T.TripID) AS TotalTrips
-FROM tblCRUISESHIP C
-	JOIN tblTRIP T ON C.CruiseshipID = T.CruiseshipID
-WHERE T.StartDate > (SELECT GETDATE() - 365.25 * 5)
-GROUP BY C.CruiseshipID, C.CruiseshipName
-ORDER BY COUNT(T.TripID) DESC
-
--- 2. View top 15 customers who have spent the most on
---`   all excursions and activities in last 5 years...
---	  Who have also been to a port in Mexico during the 2010s.
-SELECT TOP 15 C.CustID, C.CustFname, C.CustLname, C.CustDOB, SUM(CBET.Cost) AS CummulativeSum
+-- 1. View the distribution of ages for the Disney Cruise Line.
+SELECT (CASE
+	WHEN C.CustDOB < (GETDATE() - 65 * 365.25)
+	THEN 'Seniors'
+	WHEN C.CustDOB < (GETDATE() - 55 * 365.25)
+	THEN 'Older Adult'
+	WHEN C.CustDOB < (GETDATE() - 35 * 365.25)
+	THEN 'Mid-Aged Adults'
+	WHEN C.CustDOB < (GETDATE() - 25 * 365.25)
+	THEN 'Adult'
+	WHEN C.CustDOB < (GETDATE() - 18 * 365.25)
+	THEN 'Young Adult'
+	WHEN C.CustDOB < (GETDATE() - 10 * 365.25)
+	THEN 'Teenager'
+	WHEN C.CustDOB < (GETDATE() - 2 * 365.25)
+	THEN 'Child'
+	ELSE 'Baby'
+END) AS AgeGroups, COUNT(*) AS TotDisneyCust
 FROM tblCUSTOMER C
 	JOIN tblCUST_BOOK CB ON C.CustID = CB.CustID
 	JOIN tblBOOKING B ON CB.BookingID = B.BookingID
+	JOIN tblTRIP_CABIN TC ON B.TripCabinID = TC.TripCabinID
+	JOIN tblCABIN CA ON TC.CabinID = CA.CabinID
+	JOIN tblCRUISESHIP CR ON CA.CruiseshipID = CR.CruiseshipID
+	JOIN tblCRUISELINE CL ON CR.CruiseLineID = CL.CruiseLineID
+WHERE CL.CruiseLineName = 'Disney Cruise Line'
+GROUP BY (CASE
+	WHEN C.CustDOB < (GETDATE() - 65 * 365.25)
+	THEN 'Seniors'
+	WHEN C.CustDOB < (GETDATE() - 55 * 365.25)
+	THEN 'Older Adult'
+	WHEN C.CustDOB < (GETDATE() - 35 * 365.25)
+	THEN 'Mid-Aged Adults'
+	WHEN C.CustDOB < (GETDATE() - 25 * 365.25)
+	THEN 'Adult'
+	WHEN C.CustDOB < (GETDATE() - 18 * 365.25)
+	THEN 'Young Adult'
+	WHEN C.CustDOB < (GETDATE() - 10 * 365.25)
+	THEN 'Teenager'
+	WHEN C.CustDOB < (GETDATE() - 2 * 365.25)
+	THEN 'Child'
+	ELSE 'Baby'
+END)
+ORDER BY TotDisneyCust
+-- 2. View top 15 customers who have spent the most on
+--`   all excursions and activities in last 5 years...
+--	  Who have also been to a port in Mexico during the 2010s.
+--	  Who have also had an incident type 'injury' at the venue type 'bar'.
+SELECT TOP 15 C.CustID, C.CustFname, C.CustLname, C.CustDOB, SUM(E.Cost) AS CummulativeSum
+FROM tblCUSTOMER C
+	JOIN tblCUST_BOOK CB ON C.CustID = CB.CustID
+	JOIN tblBOOKING B ON CB.BookingID = B.BookingID
+	JOIN tblBOOKING_STATUS BS ON B.BookStatusID = BS.BookStatusID
 	JOIN tblTRIP_CABIN TC ON B.TripCabinID = TC.TripCabinID
 	JOIN tblTRIP T ON TC.TripID = T.TripID
 	JOIN tblEXCURSION_TRIP EC ON TC.TripID = EC.TripID
 	JOIN tblEXCURSION E ON EC.ExcursionID = E.ExcursionID
 	JOIN tblCUST_BOOK_EXC_TRIP CBET ON EC.ExcursionTripID = CBET.ExcursionTripID
+	JOIN tblCRUISESHIP CS ON T.CruiseshipID = CS.CruiseshipID
+	JOIN tblVENUES V ON CS.CruiseshipID = V.CruiseshipID
+	JOIN tblVENUE_TYPE VT ON V.VenueTypeID = V.VenueTypeID
+	JOIN tblINCIDENT I ON V.VenueID = I.VenueID
+	JOIN tblINCIDENT_TYPE IT ON I.IncidentTypeID = IT.IncidentTypeID
 JOIN
 	(SELECT C.CustID, C.CustFname, C.CustLname, C.CustDOB
 	FROM tblCUSTOMER C
@@ -290,15 +332,17 @@ JOIN
 		JOIN tblTRIP T ON TC.TripID = T.TripID
 		JOIN tblEXCURSION_TRIP EC ON TC.TripID = EC.TripID
 		JOIN tblEXCURSION E ON EC.ExcursionID = E.ExcursionID
-		JOIN tblROUTE_PORT RP ON E.RoutePortID = RP.RoutePortID
-		JOIN tblPORT P ON RP.PortID = P.PortID
-		JOIN tblCITY CI ON P.CityID = CI.CityID
-		JOIN tblCOUNTRY CO ON CI.CountryID = CO.CountryID
+		JOIN tblROUTE_LOCATION RL ON E.RouteLocID = RL.RouteLocID
+		JOIN tblLOCATION L ON RL.LocationID = L.LocationID
+		JOIN tblCOUNTRY CO ON L.CountryID = CO.CountryID
 	WHERE CO.CountryName = 'Mexico'
 		AND T.StartDate BETWEEN '2010' AND '2019') AS SQ1 ON SQ1.CustID = C.CustID
 WHERE EC.StartTime > (SELECT GETDATE() - 365.25 * 5)
+	AND IT.IncidentTypeName = 'Injury'
+	AND VT.VenueTypeName = 'Bar'
+	AND BS.BookStatusName != 'Canceled'
 GROUP BY C.CustID, C.CustFname, C.CustLname, C.CustDOB
-ORDER BY SUM(CBET.Cost) DESC
+ORDER BY SUM(E.Cost) DESC
 
 -- Synthetic Transactions
 -- 1. tblCUST_BOOK_ACT_TRIP
