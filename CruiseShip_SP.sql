@@ -1,5 +1,5 @@
 -- Stored Procedures
-Alter Procedure mag_getActivityID
+Create Procedure mag_getActivityID
 @A_N varchar(50),
 @C	Int,
 @A_ID Int Output
@@ -11,7 +11,7 @@ Set @A_ID = (Select ActivityID
 			And Capacity = @C)
 Go
 
-Alter Procedure mag_getTripID
+Create Procedure mag_getTripID
 @S_D Date,
 @E_D Date,
 @T_ID Int Output
@@ -24,7 +24,7 @@ And EndDate = @E_D)
 
 Go
 
-Alter Procedure mag_getCustID
+Create Procedure mag_getCustID
 @C_F varchar(50),
 @C_L varchar(50),
 @DOB Date,
@@ -40,7 +40,7 @@ And CustDOB = @DOB)
 
 Go
 
-Alter Procedure mag_getBookingID
+Create Procedure mag_getBookingID
 @B_N char(7),
 @B_T Datetime,
 @B_ID Int Output
@@ -53,7 +53,7 @@ And BookingTime = @B_T)
 
 Go
 
-Alter Procedure mag_getCust_BookID
+Create Procedure mag_getCust_BookID
 @Book_N char(7),
 @Book_T Datetime,
 @Cust_F varchar(50),
@@ -81,7 +81,7 @@ Where CustID = @Cust_ID
 And BookingID = @Book_ID)
 Go
 
-Alter Procedure mag_getActivity_TripID
+Create Procedure mag_getActivity_TripID
 @S_T	Datetime,
 @E_T	Datetime,
 @Ac_Na	varchar(50),
@@ -110,7 +110,7 @@ Declare @ACT_ID Int, @TR_ID Int
 				And EndTime = @E_T)
 Go
 
-Alter Procedure uspNew_Cust_Book_Act_Trip
+Create Procedure uspNew_Cust_Book_Act_Trip
 @C Numeric(8,2), -- Cost
 @R Datetime, -- Registime
 @St_Time Datetime, -- Start time
@@ -174,7 +174,7 @@ Go
 -- Inserting a new activity that a customer went on
 
 -- Gets ID of a cruiseship
-Alter Procedure mag_getCruiseShipID
+Create Procedure mag_getCruiseShipID
 @C_N varchar(50),
 @Capac Int,
 @M_D Datetime,
@@ -189,7 +189,7 @@ Set @C_ID = (Select CruiseshipID
 Go
 
 -- Stored procedure for getting the id value of a venue
-Alter Procedure mag_getVenueID
+Create Procedure mag_getVenueID
 @Cru_N varchar(50),
 @Cru_C Int,
 @Cru_MD Datetime,
@@ -214,7 +214,7 @@ As
 Go
 
 -- Stored procedure for getting activitytype ID
-Alter Procedure mag_getActivityTypeID
+Create Procedure mag_getActivityTypeID
 @AT_N varchar(50),
 @AT_ID Int Output
 As
@@ -223,7 +223,7 @@ As
 Go
 
 -- Stored procedure for inserting a new activity
-Alter Procedure mag_uspNewActivity
+Create Procedure mag_uspNewActivity
 @A_N varchar(50),
 @A_D varchar(500),
 @A_C Int,

@@ -22,7 +22,7 @@ Begin
 			Join tblBOOKING_STATUS BS On B.BookingStatusID = BS.BookingStatusID
 		Where T.StartDate >= (Select GetDate() - 365.25 * 10)
 			And BS.BookStatusName = 'Valid'
-			And T.EndDate <= (Select GetDate()
+			And T.EndDate <= (Select GetDate())
 			And C.CustID = @PK)
 	Return @Ret
 End
