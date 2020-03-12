@@ -1,13 +1,8 @@
 Use Cruise
 Go
 
-/*Select * from tblACTIVITY_TRIP
-Select * from tblActivity
-Select * from tblActivity_Type
-Select * from tblVenues
-Go*/
-
-Alter Procedure wrapper_Synthetic
+-- Wrapper for inserting rows into tblCust_Book_Act_Trip
+Create Procedure wrapper_Synthetic
 @Run Int
 As 
 
@@ -25,7 +20,7 @@ Declare @Customer_Fn	varchar(50)
 Declare @Customer_Ln	varchar(50)
 Declare @Customer_Birthy Date
 
--- Row Counts for relevant tables customer, booking, excursion, trip
+-- Row Counts for relevant tables customer, booking, activity, trip
 Declare @RowCustomerBookingCount Int = (Select Count(*) From tblCust_Book)
 Declare @RowActivityTripCount Int = (Select Count(*) From tblActivity_Trip)
 
@@ -40,12 +35,6 @@ While @Run > 0
 		Set @AT_PKID = (Select Rand() * @RowActivityTripCount + 1)
 		Print '@AT_PKID ='
 		Print @AT_PKID
-
-		--Select * from tblCust_book Where CustBookingID = 2158
-/*Select C.CustLname From tblCustomer C
-								Join tblCust_Book CB On C.CustID = CB.CustID
-								Join tblBooking B On CB.BookingID = B.BookingID
-							Where CB.CustBookingID = 6897*/
 
 		-- Customer Information
 		Set @Customer_Fn = (Select C.CustFname From tblCustomer C
@@ -147,9 +136,47 @@ Execute wrapper_Synthetic
 @Run = 1000
 Go
 
-/*Delete From tblCUST_BOOK_ACT_TRIP Where CustBookActTripID > 0
-DBCC CheckIdent (tblCust_book_Act_Trip, Reseed, 0)
+Create Procedure insActivity_Trip
+@Run Int
+As
+Declare @ActivityRowCount Int = (Select Count(*) From tblActivity)
+Declare @TripRowCount Int  = (Select Count(*) From tblTrip)
 
-Select * from tblCUST_BOOK_ACT_TRIP
+Declare @Activity_PK Int
+Declare @Trip_PK Int
 
-Select * from tblACTIVITY_TRIP*/
+Declare @ST Datetime  
+Declare @SST Datetime
+Declare @ET Datetime
+Declare @EET Datetime
+
+While @Run > 0
+Begin
+
+
+
+	Set @Activity_PK = (Select Rand() * @ActivityRowCount)
+	Set @Trip_PK = (Select Rand() * @TripRowCount)
+
+	Set @ST = (Select StartDate
+			  From tblTrip
+			  Where TripID = @Trip_PK)
+
+	Set @SST = DateAdd(Hour, ABS(CheckSum(NewID()) % 12), @ST)
+
+	Set @ET = DATEADD(Hour, ABS(CheckSum(NEWID()) % 12), @SST)
+
+	Set @EET = DateAdd(Minute, 30, @ET)
+
+
+	Insert Into tblActivity_Trip(ActivityID, TripID, StartTime, EndTime)
+	Values (@Activity_PK, @Trip_PK, @SST, @EET)
+
+Set @Run = @Run - 1
+Print @Run
+End
+
+
+Execute insActivity_Trip
+@Run = 1000
+Go
