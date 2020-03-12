@@ -1,5 +1,6 @@
 -- Views
-
+Use Cruise
+Go
 -- View 1
 Create View vw_Top5CruiseLinesWithMostTrips10Years
 As
@@ -94,15 +95,3 @@ From tblCustomer C
 Go
 
 Select * from mag_vw_MoneySpentInVariousVenueTypes
-
-
-/*Select * from tblCUST_BOOK_EXC_TRIP
-Select * from tblIncident
-Select * from tblCountry
-Select * from tblCUST_BOOK_ACT_TRIP
-Select * from tblTrip
-Select * from tblLOCATION
-Select * from tblCountry*/
-Select * from tblVENUE_TYPE
-Select * from tblSTAFF_TRIP_POSITION
-Select * from tblSTAFF
