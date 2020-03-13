@@ -35,7 +35,6 @@ ADD TripCostRecent10Years As (dbo.fTotalCostPastTenYears(CustID))
 Go
 
 -- Total Number of Attendance for a Activity_Trip
-
 Create Function fTotalAttendanceForActivity
 (@AK Int, @TK Int)
 
@@ -53,6 +52,6 @@ Begin
 End
 Go
 
-Alter Table ATP
+Alter Table tblActivity_Trip
 Add TotalAttendanceForActivity As (dbo.fTotalAttendanceForActivity(ActivityID, TripID))
 Go
