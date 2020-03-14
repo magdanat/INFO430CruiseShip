@@ -73,10 +73,10 @@ Begin
 				Join tblLocation L On RL.LocationID = L.LocationID
 				Join tblCountry C On L.CountryID = C.CountryID
 			Where C.CountryName Like '%USA%'
-				And ACT.ActivityTypeName Like '%Entertainment%'
-				And ACT.ActivityTypeName Like '%Shopping%'
-				And VT.VenueTypeName Like '%Theatre%'
-				And VT.VenueTypeName Like '%Gift Shop%'
+				Or ACT.ActivityTypeName Like '%Entertainment%'
+				Or ACT.ActivityTypeName Like '%Shopping%'
+				Or VT.VenueTypeName Like '%Theatre%'
+				Or VT.VenueTypeName Like '%Gift Shop%'
 				And A.Cost > 0)
 			Begin Set @Ret = 1
 			End
@@ -103,8 +103,8 @@ Begin
 				Join tblVenues V On A.VenueID = V.VenueID
 				Join tblVenue_Type VT On V.VenueTypeID = VT.VenueTypeID
 			Where ACT.StartTime < (Select DateAdd(Hour, -4, ACT.EndTime))
-				And ACTT.ActivityTypeName Like '%Food & Dining%'
-				And ACTT.ActivityTypeName Like '%Celebration%'
+				Or ACTT.ActivityTypeName Like '%Food & Dining%'
+				Or ACTT.ActivityTypeName Like '%Celebration%'
 				And VT.VenueTypeName Like '%Deck%')
 			Begin Set @Ret = 1
 			End
