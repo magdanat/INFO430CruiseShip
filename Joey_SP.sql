@@ -22,7 +22,6 @@ AS
 
 SET @V_ID = (SELECT VenueID FROM tblVENUES V
               JOIN tblVenue_TypeID VT on VT.VenueTypeID = V.VenueTypeID
-			  JOIN tblCRUISESHIP C ON C.CruiseshipID = V.CruiseshipID
 			  WHERE VenueName = @VName
 			  AND Capacity = @C)
 GO
@@ -223,15 +222,6 @@ IF @@ERROR <>0
 	END
 ELSE
        COMMIT TRAN T1
-
-
-
-
-
-
-
-
-
 
 
 
