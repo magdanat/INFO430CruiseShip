@@ -36,7 +36,7 @@ Go
 
 -- Total Number of Attendance for a Activity_Trip
 Create Function fTotalAttendanceForActivity
-(@AK Int, @TK Int)
+(@AK Int)
 
 Returns Int
 As
@@ -46,8 +46,8 @@ Begin
 		Select Count(*) From tblCUST_BOOK_ACT_TRIP CBAT
 			Join tblACTIVITY_TRIP ATP On CBAT.ActivityTripID = ATP.ActivityTripID
 			Join tblTRIP T On ATP.TripID = T.TripID	
-		Where ATP.ActivityID = @AK
-		And T.TripID = @TK)
+		Where ATP.ActivityTripID = @AK
+		And CBAT.ActivityTripID = @AK)
 	Return @Ret
 End
 Go
