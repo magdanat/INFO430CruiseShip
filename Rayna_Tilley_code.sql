@@ -250,7 +250,7 @@ CREATE FUNCTION cruise_RatioCustUnder21Over21Up_fn(@PK_ID INT)
 RETURNS numeric(8,6)
 AS
 BEGIN
-	DECLARE @TotalUnder21 INT, @Total21AndOVer INT, @Ret INT
+	DECLARE @TotalUnder21 INT, @Total21AndOVer INT, @Ret numeric(8,6)
 	SET @TotalUnder21 =
 	(SELECT COUNT(CB.CustBookingID)
 	FROM tblBOOKING B
@@ -281,7 +281,7 @@ BEGIN
 		BEGIN
 			SET @TotalUnder21 = 1
 		END
-	SET @Ret = (CONVERT(FLOAT, @TotalUnder21) / @Total21AndOver)
+	SET @Ret = (CONVERT(FLOAT, @TotalUnder21) / CONVERT(FLOAT, @Total21AndOver))
 RETURN @Ret
 END
 GO
@@ -292,7 +292,7 @@ CREATE FUNCTION cruise_RatioCustFemOverMale_fn(@PK_ID INT)
 RETURNS numeric(8,6)
 AS
 BEGIN
-	DECLARE @TotalFemale INT, @TotalMale INT, @Ret INT
+	DECLARE @TotalFemale INT, @TotalMale INT, @Ret numeric(8,6)
 	SET @TotalFemale =
 	(SELECT COUNT(CB.CustBookingID)
 	FROM tblBOOKING B
@@ -325,7 +325,7 @@ BEGIN
 		BEGIN
 			SET @TotalFemale = 1
 		END
-	SET @Ret = (CONVERT(FLOAT, @TotalFemale) / @TotalMale)
+	SET @Ret = (CONVERT(FLOAT, @TotalFemale) / CONVERT(FLOAT, @TotalMale))
 RETURN @Ret
 END
 GO
