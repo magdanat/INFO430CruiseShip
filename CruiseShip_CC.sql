@@ -62,5 +62,5 @@ End
 Go
 
 Alter Table tblActivity_Trip
-Add TotalAttendanceForActivity As (dbo.fTotalAttendanceForActivity(ActivityID, TripID))
+Add TotalAttendanceForActivity As (dbo.fTotalAttendanceForActivity(ActivityTripID))
 Go
