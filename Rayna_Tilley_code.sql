@@ -3,11 +3,11 @@
 
 /*
 SUMMARY:
-Business Rules: IP
+Business Rules: DONE
 Stored Procedures: DONE
-Computed Columns: DONE-ish
-Views: IP
-Synthetic Transactions: Not Started
+Computed Columns: DONE
+Views: DONE
+Synthetic Transactions: DONE
 */
 USE CRUISE
 
