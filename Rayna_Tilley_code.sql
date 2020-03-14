@@ -277,6 +277,10 @@ BEGIN
 		BEGIN
 			SET @Total21AndOver = 1
 		END
+	IF @TotalUnder21 = 0
+		BEGIN
+			SET @TotalUnder21 = 1
+		END
 	SET @Ret = (CONVERT(FLOAT, @TotalUnder21) / @Total21AndOver)
 RETURN @Ret
 END
@@ -316,6 +320,10 @@ BEGIN
 	IF @TotalMale = 0
 		BEGIN
 			SET @TotalMale = 1
+		END
+	IF @TotalFemale = 0
+		BEGIN
+			SET @TotalFemale = 1
 		END
 	SET @Ret = (CONVERT(FLOAT, @TotalFemale) / @TotalMale)
 RETURN @Ret
