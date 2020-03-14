@@ -28,7 +28,8 @@ BEGIN
 				JOIN tblEXCURSION_TYPE ETY ON E.ExcursionTypeID = ETY.ExcursionTypeID
 				JOIN tblCUSTOMER C ON CB.CustID = C.CustID
 			WHERE C.CustDOB < (ET.StartTime - 365.25 * 90)
-				AND ETY.ExcursionTypeName = 'Hiking')
+				AND ETY.ExcursionTypeName = 'Hiking'
+				AND BS.BookStatusName = 'Valid')
 		BEGIN
 			SET @Ret = 1
 		END
@@ -39,7 +40,7 @@ ALTER TABLE tblCUST_BOOK_EXC_TRIP
 ADD CONSTRAINT NoHikesFor90
 CHECK(dbo.cruise_CustBookExcTrip_noHikesFor90() = 0)
 GO
--- 2. No more than the capacity for each cabin.
+-- 2. No booking an excursion if the booking status for the customer's trip is "Canceled"
 CREATE FUNCTION cruise_CustBookExcTrip_NoCanceled()
 RETURNS INT
 AS
@@ -161,7 +162,7 @@ CREATE PROC cruise_GetExcursionID
 AS
 SET @E_ID = (SELECT ExcursionID FROM tblEXCURSION WHERE ExcursionName = @EName)
 GO
--- 6. Get TripID -- Before we got rid of TripName...
+-- 6. Get TripID
 CREATE PROC cruise_GetTripID
 @ShipName varchar(50),
 @Start date,
@@ -199,7 +200,7 @@ SET @ET_ID = (SELECT ExcursionTripID FROM tblEXCURSION_TRIP
 GO
 
 -- Computed Columns
--- 1. Number of incidents for each trip
+-- 1. Number of "Emergency" incidents in living space departments for each trip.
 CREATE FUNCTION cruise_NumDeckEmergencies_fn(@PK_ID INT)
 RETURNS INT
 AS
@@ -222,34 +223,108 @@ RETURN @Ret
 END
 GO
 ALTER TABLE tblTRIP ADD TotalDeckEmergencies AS (dbo.cruise_NumDeckEmergencies_fn(TripID))
--- 2. How many customers are on a trip (Check CUST_BOOK status)
---	  Confused about what is meant by this...
-CREATE FUNCTION cruise_TotalActivePassengers_fn(@PK_ID INT)
+-- 2. How many customers are on a trip that are younger than 21.
+CREATE FUNCTION cruise_TotalActivePassengersUnder21_fn(@PK_ID INT)
 RETURNS INT
 AS
 BEGIN
 	DECLARE @Ret INT =
-	(SELECT COUNT(B.BookingID)
+	(SELECT COUNT(CB.CustBookingID)
 	FROM tblBOOKING B
 		JOIN tblBOOKING_STATUS BS ON BS.BookStatusID = B.BookStatusID
 		JOIN tblTRIP_CABIN TC ON B.TripCabinID = TC.TripCabinID
 		JOIN tblTRIP T ON TC.TripID = T.TripID
+		JOIN tblCUST_BOOK CB ON B.BookingID = CB.BookingID
+		JOIN tblCUSTOMER C ON CB.CustID = C.CustID
 	WHERE T.TripID = @PK_ID
-		AND BS.BookStatusName != 'Canceled')
+		AND BS.BookStatusName != 'Canceled'
+		AND C.CustDOB > (B.BookingTime - 365.25 * 21)
 RETURN @Ret
 END
 GO
-ALTER TABLE tblTRIP ADD TotalPassengers AS (dbo.cruise_TotalActivePassengers_fn(TripID))
--- 3. Total custombers booked for each cabin_trip.
+ALTER TABLE tblTRIP
+ADD TotalPassengersUnder21 AS (dbo.cruise_TotalActivePassengersUnder21_fn(TripID))
+-- 3. Ratio of customers under 21 over customers older than 21 for each trip.
+CREATE FUNCTION cruise_RatioCustUnder21Over21Up_fn(@PK_ID INT)
+RETURNS numeric(8,2)
+AS
+BEGIN
+	DECLARE @TotalUnder21 INT, @Total21AndOVer INT
+	SET @TotalUnder21 =
+	(SELECT COUNT(CB.CustBookingID)
+	FROM tblBOOKING B
+		JOIN tblBOOKING_STATUS BS ON BS.BookStatusID = B.BookStatusID
+		JOIN tblTRIP_CABIN TC ON B.TripCabinID = TC.TripCabinID
+		JOIN tblTRIP T ON TC.TripID = T.TripID
+		JOIN tblCUST_BOOK CB ON B.BookingID = CB.BookingID
+		JOIN tblCUSTOMER C ON CB.CustID = C.CustID
+	WHERE T.TripID = @PK_ID
+		AND BS.BookStatusName != 'Canceled'
+		AND C.CustDOB > (B.BookingTime - 365.25 * 21))
+	SET @Total21AndOver =
+	(SELECT COUNT(CB.CustBookingID)
+	FROM tblBOOKING B
+		JOIN tblBOOKING_STATUS BS ON BS.BookStatusID = B.BookStatusID
+		JOIN tblTRIP_CABIN TC ON B.TripCabinID = TC.TripCabinID
+		JOIN tblTRIP T ON TC.TripID = T.TripID
+		JOIN tblCUST_BOOK CB ON B.BookingID = CB.BookingID
+		JOIN tblCUSTOMER C ON CB.CustID = C.CustID
+	WHERE T.TripID = @PK_ID
+		AND BS.BookStatusName != 'Canceled'
+		AND C.CustDOB <= (B.BookingTime - 365.25 * 21))
+RETURN (@TotalUnder21 / @Total21AndOver)
+END
+GO
+ALTER TABLE tblTRIP
+ADD RatioCustUnder21Over21Up AS (dbo.cruise_RatioCustUnder21Over21Up_fn(TripID))
+-- 4. Ratio of customers that are female over customers that are male for each trip.
+CREATE FUNCTION cruise_RatioCustFemOverMale_fn(@PK_ID INT)
+RETURNS numeric(8,2)
+AS
+BEGIN
+	DECLARE @TotalFemale INT, @TotalMale INT
+	SET @TotalFemale =
+	(SELECT COUNT(CB.CustBookingID)
+	FROM tblBOOKING B
+		JOIN tblBOOKING_STATUS BS ON BS.BookStatusID = B.BookStatusID
+		JOIN tblTRIP_CABIN TC ON B.TripCabinID = TC.TripCabinID
+		JOIN tblTRIP T ON TC.TripID = T.TripID
+		JOIN tblCUST_BOOK CB ON B.BookingID = CB.BookingID
+		JOIN tblCUSTOMER C ON CB.CustID = C.CustID
+		JOIN tblGENDER G ON C.GenderID = G.GenderID
+	WHERE T.TripID = @PK_ID
+		AND BS.BookStatusName != 'Canceled'
+		AND G.GenderName = 'Female')
+	SET @TotalMale =
+	(SELECT COUNT(CB.CustBookingID)
+	FROM tblBOOKING B
+		JOIN tblBOOKING_STATUS BS ON BS.BookStatusID = B.BookStatusID
+		JOIN tblTRIP_CABIN TC ON B.TripCabinID = TC.TripCabinID
+		JOIN tblTRIP T ON TC.TripID = T.TripID
+		JOIN tblCUST_BOOK CB ON B.BookingID = CB.BookingID
+		JOIN tblCUSTOMER C ON CB.CustID = C.CustID
+		JOIN tblGENDER G ON C.GenderID = G.GenderID
+	WHERE T.TripID = @PK_ID
+		AND BS.BookStatusName != 'Canceled'
+		AND G.GenderName = 'Male')
+RETURN (@TotalFemale / @TotalMale)
+END
+GO
+ALTER TABLE tblTRIP
+ADD RatioCustFemOverMale_fn AS (dbo.cruise_RatioCustFemOverMale_fn(TripID))
+-- 5. Total customers booked for each cabin_trip.
 CREATE FUNCTION cruise_TotalCabinCapacity_fn(@PK_ID INT)
 RETURNS INT
 AS
 BEGIN
 	DECLARE @Ret INT =
-	(SELECT COUNT(B.BookingID)
+	(SELECT COUNT(B.CustBookingID)
 	FROM tblBOOKING B
 		JOIN tblTRIP_CABIN TC ON B.TripCabinID = TC.TripCabinID
-	WHERE TC.TripCabinID = @PK_ID)
+		JOIN tblCUST_BOOK CB ON B.BookingID = CB.BookingID
+		JOIN tblBOOKING_STATUS BS ON B.BookStatusID = BS.BookStatusID
+	WHERE TC.TripCabinID = @PK_ID
+		AND BS.BookStatusName = 'Valid')
 RETURN @Ret
 END
 GO
