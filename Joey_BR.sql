@@ -34,6 +34,8 @@ CHECK(dbo.fn_noUnder21atBar()=0)
 
 GO
 
+SELECT * FROM tblVENUES
+
 
 ---When a trip has happened you can’t book it
 CREATE FUNCTION fn_noBookingwhenTripStarts()
@@ -48,7 +50,7 @@ BEGIN
 	       SELECT * FROM tblTRIP T
 		      JOIN tblTRIP_CABIN TC ON T.TripID = TC.TripID
 			  JOIN tblBOOKING B ON TC.TripCabinID = B.TripCabinID
-		   WHERE T.StartDate > (Select GetDate() - B.BookingTime)
+		   WHERE T.StartDate > B.BookingTime
 		   )
 		Begin Set @Ret = 1
 		End
@@ -61,11 +63,3 @@ Add Constraint CK_noBookingwhenTripStarts
 Check (dbo.fn_noBookingwhenTripStarts() = 0)
 
 GO
-
-
-
-
-
-
-
-SELECT * FROM tblTRIP
