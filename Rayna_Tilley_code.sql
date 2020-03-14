@@ -331,7 +331,6 @@ END
 GO
 ALTER TABLE tblTRIP
 ADD RatioCustFemOverMale AS (dbo.cruise_RatioCustFemOverMale_fn(TripID))
-SELECT * FROM tblTRIP
 -- 5. Total customers booked for each cabin_trip.
 CREATE FUNCTION cruise_TotalCabinCapacity_fn(@PK_ID INT)
 RETURNS INT
