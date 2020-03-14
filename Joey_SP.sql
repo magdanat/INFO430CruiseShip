@@ -2,19 +2,6 @@ USE CRUISE
 
 /*1)Add new row in tblINCIDENT */
 
-CREATE PROCEDURE GetIncidentID
-@Inci_N VARCHAR(50),
-@Inci_ST DATETIME
-@Inci_ET DATETIME
-@Inci_ID INT OUTPUT
-
-AS
-
-SET @Inci_ID = (SELECT IncidentID FROM tblINCIDENT
-                WHERE IncidentName = @Inci_N
-				AND IncidentStartTime = @Inci_ST
-				AND IncidentEndTime = @Inci_ET)
-GO
 
 CREATE PROCEDURE GetIncidentTypeID
 @ITName VARCHAR(50),
@@ -23,8 +10,7 @@ CREATE PROCEDURE GetIncidentTypeID
 AS
 
 SET @IT_ID = (SELECT IncidentTypeID from tblINCIDENT_TYPE IT
-                           JOIN tblINCIDENT I ON IT.IncidentTypeID = I.IncidentTypeID
-						   WHERE IncidentTypeName = @ITName)
+                           WHERE IncidentTypeName = @ITName)
 GO
 
 CREATE PROCEDURE GetVenueID
