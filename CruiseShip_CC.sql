@@ -16,9 +16,14 @@ As
 Begin
 	Declare @Ret Numeric(8, 2)
 	Set @Ret = (
-		Select Sum(CBT.Cost) From tblCUST_BOOK_TRIP CBT
-			Join tblTRIP T On CBT.TripID = T.TripID
-			Join tblCUST_BOOK CB On CBT.CustBookingID = CB.CustBookingID
+		Select Sum(CBAT.Cost + ET.Cost) From tblCUST_BOOK_ACT_TRIP CBAT
+			Join tblActivity_Trip ATT On CBAT.ActivityTripID = ATT.ActivityTripID
+			Join tblActivity ACY On ATT.ActivityID = ACY.ActivityID
+			Join tblTRIP T On ATT.TripID = T.TripID
+			Join tblCUST_BOOK CB On CBAT.CustBookingID = CB.CustBookingID
+			join tblCUST_BOOK_EXC_TRIP CBET On  CB.CustBookingID = CBET.CustBookingID
+			Join tblEXCURSION_TRIP EXT on CBET.ExcursionTripID = EXT.ExcursionTripID
+			Join tblExcursion ET On EXT.ExcursionID = ET.ExcursionID
 			Join tblCUSTOMER C On CB.CustID = C.CustID
 			Join tblBOOKING B On CB.BookingID = B.BookingID
 			Join tblBOOKING_STATUS BS On B.BookStatusID = BS.BookStatusID
@@ -36,7 +41,7 @@ Go
 
 -- Total Number of Attendance for a Activity_Trip
 Create Function fTotalAttendanceForActivity
-(@AK Int)
+(@PK Int)
 
 Returns Int
 As
@@ -46,8 +51,12 @@ Begin
 		Select Count(*) From tblCUST_BOOK_ACT_TRIP CBAT
 			Join tblACTIVITY_TRIP ATP On CBAT.ActivityTripID = ATP.ActivityTripID
 			Join tblTRIP T On ATP.TripID = T.TripID	
-		Where ATP.ActivityTripID = @AK
-		And CBAT.ActivityTripID = @AK)
+			Join tblCust_Book CB On CBAT.CustBookingID = CB.CustBookingID
+			Join tblCustomer C On CB.CustID = C.CustID
+			Join tblGender G On C.GenderID = G.GenderID
+		Where ATP.ActivityTripID = @PK
+		And CBAT.ActivityTripID = @PK
+		And G.GenderName = 'Female')
 	Return @Ret
 End
 Go
