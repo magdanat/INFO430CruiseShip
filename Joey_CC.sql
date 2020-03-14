@@ -1,11 +1,8 @@
-USE CRUISE
-
----Total number of excursion_trips, whose excursion type is 'Wilderness & Wildlife' for each location between 2010 and 2030
 CREATE FUNCTION fn_TotalNumExcursionTrip(@PK INT)
 RETURNS INT
 AS
 BEGIN 
-   DECLARE @RET INT =0
+   DECLARE @RET INT 
     SET @RET= (
 	   SELECT COUNT(ET.ExcursionTripID) FROM tblEXCURSION_TRIP ET
 		   JOIN tblEXCURSION E ON ET.ExcursionTripID = E.ExcursionTypeID
@@ -23,29 +20,35 @@ ALTER TABLE tblLOCATION
 ADD NumExcursionTrip AS (dbo.fn_TotalNumExcursionTrip(LocationID))
 GO
 
+select * from tblEXCURSION_TYPE
 
-
----Number of customers(CUST_BOOK) who have attend at least 1 excursion and 1 activity for each trip
-CREATE FUNCTION fn_1Excursion_1activity(@EK INT, @AK INT)
+---total number of activity in any type and excursions, whose type is "family", for a trip
+CREATE FUNCTION fn_TotalNumExcurActivity(@PK INT)
 RETURNS INT
 AS
-BEGIN 
-   DECLARE @RET INT =0
-    SET @RET= (
-	   SELECT COUNT(E.ExcursionID) FROM tblEXCURSION E
-	     JOIN tblEXCURSION_TRIP ET ON E.ExcursionID = ET.ExcursionID
-		 JOIN tblACTIVITY_TRIP ACT ON ET.TripID = ACT.TripID
-		 JOIN tblACTIVITY A ON ACT.ActivityTripID = A.ActivityTypeID
-		WHERE ACT.ActivityID = @AK
-		AND E.ExcursionID = @EK)
 
-  RETURN @RET
+BEGIN
+    DECLARE @RET INT
+    DECLARE @ExNum INT, @ActNum INT
+    SET @ExNum = (
+        SELECT COUNT(E.ExcursionID) FROM tblTRIP T
+            JOIN tblEXCURSION_TRIP ETrip on T.TripID = ETrip.TripID
+            JOIN tblEXCURSION E on ETrip.ExcursionID = E.ExcursionID
+            JOIN tblEXCURSION_TYPE EType on E.ExcursionTypeID = EType.ExcursionTypeID
+        WHERE EType.ExcursionTypeName = 'Family'
+            AND T.TripID = @PK)
+
+    SET @ActNum = (
+        SELECT COUNT(A.ActivityID) FROM tblTRIP T
+            JOIN tblACTIVITY_TRIP AT on T.TripID = AT.TripID
+            JOIN tblACTIVITY A ON AT.ActivityID = A.ActivityID
+            JOIN tblACTIVITY_TYPE ATT on A.ActivityTypeID = ATT.ActivityTypeID
+           WHERE ATT.ActivityTypeName LIKE '%family%'
+            AND A.ActivityID = @PK)
+    SET @RET =@ExNum +@ActNum 
+RETURN @RET
 END
 
 ALTER TABLE tblTRIP
-ADD Excursion_activity AS (dbo.fn_1Excursion_1activity(TripID))
-GO
+ADD NumOfFamilyActExc AS (dbo.fn_TotalNumExcurActivity(TripID))
 
----Error
-----Msg 313, Level 16, State 2, Line 45
-----An insufficient number of arguments were supplied for the procedure or function dbo.fn_1Excursion_1activity.
