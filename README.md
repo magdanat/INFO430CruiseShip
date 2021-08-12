@@ -7,4 +7,4 @@ ERD First Draft
 ![](./Cruise_ERDs/Cruiseship_ERD.png)
 
 ERD Final Draft
-![](./Cruise_ERDs/Cruiseship_ERD_Final.png)
+![](./Cruise_ERDs/Cruiseship_Final_ERD.png)
